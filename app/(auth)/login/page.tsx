@@ -24,7 +24,7 @@ export default function LoginPage() {
     if (res?.error) {
       setError("Invalid credentials");
     } else {
-      router.push("/dashboard/student");
+      router.push("/profile");
       router.refresh();
     }
   };
