@@ -51,31 +51,33 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 p-10 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Join AI-LMS</h2>
-          <p className="text-gray-500 mt-2">
-            Start your personalized learning journey
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Create your account
+          </h2>
+          <p className="text-slate-600 dark:text-slate-300 mt-2">
+            Start your personalized learning journey with AI-powered plans.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
+            <div className="bg-danger/10 text-danger p-3 rounded-lg text-sm border border-danger/20">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Full Name
             </label>
             <input
               type="text"
               required
               placeholder="John Doe"
-              className="w-full p-3 border rounded-xl text-black focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
@@ -83,14 +85,14 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Email Address
             </label>
             <input
               type="email"
               required
               placeholder="name@company.com"
-              className="w-full p-3 border rounded-xl text-black focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
@@ -98,14 +100,14 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Password
             </label>
             <input
               type="password"
               required
               placeholder="••••••••"
-              className="w-full p-3 border rounded-xl text-black focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
@@ -113,11 +115,11 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               I am a...
             </label>
             <select
-              className="w-full p-3 border rounded-xl bg-white text-black focus:ring-2 focus:ring-blue-500 outline-none transition"
+              className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
               onChange={(e) =>
                 setFormData({ ...formData, role: e.target.value })
               }
@@ -130,18 +132,15 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition disabled:bg-blue-300"
+            className="w-full bg-primary text-white px-4 py-3 rounded-xl font-bold hover:bg-primary/90 transition disabled:bg-primary/30"
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400 mt-6">
           Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-blue-600 font-semibold hover:underline"
-          >
+          <Link href="/login" className="text-primary hover:underline font-semibold">
             Sign in
           </Link>
         </p>

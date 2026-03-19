@@ -30,41 +30,55 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
       <form
         onSubmit={handleSubmit}
-        className="p-8 bg-white shadow-xl rounded-2xl w-96 space-y-4"
+        className="w-full max-w-md bg-white dark:bg-slate-800 shadow-xl rounded-3xl p-10 space-y-6 border border-slate-200 dark:border-slate-700"
       >
-        <h1 className="text-2xl font-bold text-black text-center">Login</h1>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white text-center">
+          Sign in to your account
+        </h1>
+
         {error && (
-          <p className="text-red-500 text-sm text-center font-medium">
+          <p className="text-sm font-medium text-danger/90 bg-danger/10 rounded-lg px-4 py-2">
             {error}
           </p>
         )}
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full p-2 border rounded text-black"
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-2 border rounded text-black"
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Email address
+          </label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-        <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition font-bold">
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Password
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <button className="w-full bg-primary text-white px-4 py-3 rounded-xl font-semibold hover:bg-primary/90 transition">
           Sign In
         </button>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
           New here?{" "}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Register
+          <Link href="/register" className="text-primary hover:underline">
+            Create an account
           </Link>
         </p>
       </form>
