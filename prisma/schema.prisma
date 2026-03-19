@@ -1,0 +1,109 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. User Roles
+enum Role {
+  SUPER_ADMIN
+  TEACHER
+  STUDENT
+}
+
+// 2. User Entity
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  password      String
+  role          Role         @default(STUDENT)
+  
+  // Relations
+  classes       Class[]      @relation("TeacherClasses") // If Teacher
+  enrollments   Enrollment[] // If Student
+  studyPlans    StudyPlan[]  // If Student
+  results       Result[]     // If Student
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// 3. Class Entity
+model Class {
+  id          String       @id @default(cuid())
+  className   String
+  teacherId   String
+  teacher     User         @relation("TeacherClasses", fields: [teacherId], references: [id])
+  
+  enrollments Enrollment[]
+  exams       Exam[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// 4. Enrollment (Join Table for Many-to-Many: Student <-> Class)
+model Enrollment {
+  id        String   @id @default(cuid())
+  classId   String
+  studentId String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([classId, studentId]) // Prevents double enrollment
+}
+
+// 5. AI Study Plan Entity
+model StudyPlan {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    User     @relation(fields: [studentId], references: [id])
+  topic      String
+  duration   Int      // e.g., 30 days
+  tasks      Task[]
+
+  createdAt  DateTime @default(now())
+}
+
+// 6. Daily Tasks
+model Task {
+  id               String    @id @default(cuid())
+  studyPlanId      String
+  studyPlan        StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  taskDescription  String
+  dayNumber        Int
+  isCompleted      Boolean   @default(false)
+
+  createdAt        DateTime  @default(now())
+}
+
+// 7. Exam Entity
+model Exam {
+  id         String   @id @default(cuid())
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  examTitle  String
+  examDate   DateTime
+  results    Result[]
+
+  createdAt  DateTime @default(now())
+}
+
+// 8. Results Entity
+model Result {
+  id         String   @id @default(cuid())
+  studentId  String
+  examId     String
+  student    User     @relation(fields: [studentId], references: [id])
+  exam       Exam     @relation(fields: [examId], references: [id])
+  score      Float
+
+  createdAt  DateTime @default(now())
+}
