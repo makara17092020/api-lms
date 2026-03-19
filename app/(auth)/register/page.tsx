@@ -123,7 +123,6 @@ export default function RegisterPage() {
               }
             >
               <option value="STUDENT">Student</option>
-              <option value="TEACHER">Teacher</option>
             </select>
           </div>
 
