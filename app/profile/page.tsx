@@ -1,9 +1,10 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+// 1. Import 'auth' from your custom lib file instead of NextAuth
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
+  // 2. Call auth() directly without passing any options!
+  const session = await auth();
 
   if (!session?.user?.email) {
     redirect("/login");
@@ -16,10 +17,10 @@ export default async function ProfilePage() {
         <div className="space-y-2 text-gray-700">
           <p>
             <span className="font-semibold">Name:</span>{" "}
-            {session?.user?.name || "Unknown"}
+            {session.user.name || "Unknown"}
           </p>
           <p>
-            <span className="font-semibold">Email:</span> {session?.user?.email}
+            <span className="font-semibold">Email:</span> {session.user.email}
           </p>
           <p>
             <span className="font-semibold">Role:</span>{" "}

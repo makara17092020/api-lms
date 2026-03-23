@@ -15,22 +15,25 @@ enum Role {
   STUDENT
 }
 
+// prisma/schema.prisma
+
 // 2. User Entity
 model User {
-  id            String       @id @default(cuid())
-  name          String?
-  email         String       @unique
-  password      String
-  role          Role         @default(STUDENT)
+  id          String       @id @default(cuid())
+  name        String?
+  email       String       @unique
+  password    String
+  role        Role         @default(STUDENT)
+  image       String?      // 👈 ADD THIS LINE HERE!
   
   // Relations
-  classes       Class[]      @relation("TeacherClasses") // If Teacher
-  enrollments   Enrollment[] // If Student
-  studyPlans    StudyPlan[]  // If Student
-  results       Result[]     // If Student
+  classes     Class[]      @relation("TeacherClasses")
+  enrollments Enrollment[] 
+  studyPlans  StudyPlan[]  
+  results     Result[]     
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // 3. Class Entity

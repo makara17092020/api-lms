@@ -53,8 +53,34 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    // Registration logic...
-    setLoading(false);
+
+    try {
+      // Replace '/api/register' with your actual API endpoint
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      if (!response.ok) {
+        // Attempt to parse the error message from your API response
+        const data = await response.json();
+        throw new Error(
+          data.message || "Something went wrong during registration.",
+        );
+      }
+
+      // On successful registration, redirect the user
+      router.push("/login"); // or wherever you want them to go
+    } catch (err: any) {
+      setError(
+        err.message || "An unexpected error occurred. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -199,7 +225,7 @@ export default function RegisterPage() {
                   disabled={loading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
-                  className="group relative w-full overflow-hidden rounded-3xl bg-linear-to-r from-indigo-500 to-violet-600 py-4 text-lg font-semibold text-white shadow-xl shadow-indigo-500/30 transition-all"
+                  className="group relative w-full overflow-hidden rounded-3xl bg-linear-to-r from-indigo-500 to-violet-600 py-4 text-lg font-semibold text-white shadow-xl shadow-indigo-500/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-3">
                     {loading ? (

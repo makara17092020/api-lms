@@ -7,7 +7,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { easeInOut } from "framer-motion";
 import {
-  User,
+  User, // Kept for consistency if you decide to add the name field back
   Mail,
   Lock,
   Eye,
@@ -52,8 +52,29 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Login logic...
-    setLoading(false);
+    setError("");
+
+    try {
+      // Use NextAuth credentials provider to log in
+      const res = await signIn("credentials", {
+        redirect: false, // Prevent NextAuth from doing a hard page reload
+        email,
+        password,
+      });
+
+      if (res?.error) {
+        // Display the error returned from your NextAuth config
+        setError(res.error || "Invalid email or password");
+      } else if (res?.ok) {
+        // On success, redirect to the dashboard or home page
+        router.push("/profile");
+        router.refresh(); // Refresh to update server components with new auth state
+      }
+    } catch (err: any) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,7 +135,7 @@ export default function LoginPage() {
                 animate="visible"
                 className="space-y-6"
               >
-                {/* 3 Fields: Name, Email, Password */}
+                {/* Email */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="email"
@@ -137,6 +158,7 @@ export default function LoginPage() {
                   </label>
                 </motion.div>
 
+                {/* Password */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="password"
@@ -172,10 +194,16 @@ export default function LoginPage() {
                   disabled={loading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
-                  className="group relative w-full overflow-hidden rounded-3xl bg-linear-to-r from-indigo-500 to-violet-600 py-4 text-lg font-semibold text-white shadow-xl shadow-indigo-500/30 transition-all"
+                  className="group relative w-full overflow-hidden rounded-3xl bg-linear-to-r from-indigo-500 to-violet-600 py-4 text-lg font-semibold text-white shadow-xl shadow-indigo-500/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-3">
-                    {loading ? "Signing in..." : "Sign in"}
+                    {loading ? (
+                      <>
+                        <Loader2 className="animate-spin" /> Signing in...
+                      </>
+                    ) : (
+                      "Sign in"
+                    )}
                   </span>
                   <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-0" />
                 </motion.button>
