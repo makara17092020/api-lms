@@ -1,4 +1,3 @@
-// app/api/auth/login/route.ts
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
@@ -57,7 +56,17 @@ export async function POST(req: Request) {
       { status: 200 },
     );
 
+    // 1. Set your custom HTTP-Only JWT cookies
     setAuthCookies(response, accessToken, refreshToken);
+
+    // 2. FIX: Drop the userRole cookie so proxy.ts knows you are SUPER_ADMIN!
+    response.cookies.set("userRole", user.role, {
+      httpOnly: false, // Must be false so Next.js middleware (Edge) can parse it quickly
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // matches your 7-day token refresh lifecycle
+    });
+
     return response;
   } catch (error) {
     console.error(error);

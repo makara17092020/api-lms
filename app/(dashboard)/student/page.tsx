@@ -1,12 +1,15 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import LogoutButton from "@/components/auth/LogoutButton"; // Import here
+import LogoutButton from "@/components/auth/LogoutButton"; // Verify your Logout button path!
 
 export default async function StudentProfilePage() {
-  const session = await getServerSession(authOptions);
+  // 1. Get cookies natively in Next.js Server Components
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const userRole = cookieStore.get("userRole")?.value;
 
-  if (!session) {
+  // 2. Redirect if not logged in
+  if (!accessToken) {
     redirect("/login");
   }
 
@@ -17,21 +20,22 @@ export default async function StudentProfilePage() {
       </h1>
 
       <div className="space-y-4">
-        <p className="text-gray-600 dark:text-gray-300">
-          Welcome back,{" "}
-          <span className="font-bold text-blue-600">{session.user?.name}</span>!
-        </p>
+        <p className="text-gray-600 dark:text-gray-300">Welcome back!</p>
 
         {/* Profile Details */}
         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-          <p className="text-sm text-gray-500">Email: {session.user?.email}</p>
           <p className="text-sm text-gray-500">
-            Role: {(session.user as any).role}
+            Role:{" "}
+            <span className="font-semibold text-blue-600">
+              {userRole || "STUDENT"}
+            </span>
           </p>
         </div>
 
-        {/* The Sign Out Button */}
-        <LogoutButton />
+        {/* Custom Logout Button */}
+        <div className="w-full pt-2">
+          <LogoutButton />
+        </div>
       </div>
     </div>
   );

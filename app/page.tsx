@@ -1,9 +1,12 @@
 import Link from "next/link";
+import Navbar from "@/components/shared/Navbar";
 import { MoveRight, Bot, BarChart3, GraduationCap } from "lucide-react"; // I suggest using Lucide icons for a better look
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      <Navbar />
+
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
