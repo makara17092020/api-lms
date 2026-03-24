@@ -16,7 +16,6 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { signIn } from "next-auth/react";
 
 // ===================== UNIFIED ANIMATION CONFIG =====================
 const EASE = cubicBezier(0.23, 1, 0.32, 1);
@@ -55,8 +54,8 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      // Replace '/api/register' with your actual API endpoint
-      const response = await fetch("/api/register", {
+      // FIX 1: Pointed to your actual API route path
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,20 +63,18 @@ export default function RegisterPage() {
         body: JSON.stringify({ name, email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        // Attempt to parse the error message from your API response
-        const data = await response.json();
-        throw new Error(
-          data.message || "Something went wrong during registration.",
-        );
+        // FIX 2: Your API returns { error: "message" }, not { message: "message" }
+        throw new Error(data.error || "Registration failed");
       }
 
-      // On successful registration, redirect the user
-      router.push("/login"); // or wherever you want them to go
+      // Success! Cookies are set by the server via setAuthCookies
+      router.push("/profile");
+      router.refresh();
     } catch (err: any) {
-      setError(
-        err.message || "An unexpected error occurred. Please try again.",
-      );
+      setError(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -230,7 +227,8 @@ export default function RegisterPage() {
                   <span className="relative z-10 flex items-center justify-center gap-3">
                     {loading ? (
                       <>
-                        <Loader2 className="animate-spin" /> Creating...
+                        <Loader2 className="animate-spin" size={20} />{" "}
+                        Creating...
                       </>
                     ) : (
                       "Create Account"
@@ -241,7 +239,6 @@ export default function RegisterPage() {
               </motion.div>
             </form>
 
-            {/* SINGLE GOOGLE LOGIN */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -262,7 +259,7 @@ export default function RegisterPage() {
                 transition={{ delay: 1, ease: EASE }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => signIn("google")}
+                type="button"
                 className="w-full h-14 flex items-center justify-center rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
               >
                 <FcGoogle size={24} />
