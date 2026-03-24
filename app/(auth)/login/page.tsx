@@ -7,7 +7,6 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { easeInOut } from "framer-motion";
 import {
-  User, // Kept for consistency if you decide to add the name field back
   Mail,
   Lock,
   Eye,
@@ -17,7 +16,6 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
-import { signIn } from "next-auth/react";
 
 // Variants are identical to Register page for 100% consistency
 const containerVariants = {
@@ -41,7 +39,6 @@ const itemVariants = {
 };
 
 export default function LoginPage() {
-  const [name, setName] = useState(""); // Kept for 3-field consistency
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,23 +52,26 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Use NextAuth credentials provider to log in
-      const res = await signIn("credentials", {
-        redirect: false, // Prevent NextAuth from doing a hard page reload
-        email,
-        password,
+      // FIX: Fetching your custom login API instead of using next-auth
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (res?.error) {
-        // Display the error returned from your NextAuth config
-        setError(res.error || "Invalid email or password");
-      } else if (res?.ok) {
-        // On success, redirect to the dashboard or home page
-        router.push("/profile");
-        router.refresh(); // Refresh to update server components with new auth state
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Invalid email or password");
       }
+
+      // Success! Cookies are set by the server via setAuthCookies
+      router.push("/profile");
+      router.refresh();
     } catch (err: any) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(
+        err.message || "An unexpected error occurred. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -199,7 +199,8 @@ export default function LoginPage() {
                   <span className="relative z-10 flex items-center justify-center gap-3">
                     {loading ? (
                       <>
-                        <Loader2 className="animate-spin" /> Signing in...
+                        <Loader2 className="animate-spin" size={20} /> Signing
+                        in...
                       </>
                     ) : (
                       "Sign in"
@@ -231,7 +232,7 @@ export default function LoginPage() {
                 transition={{ delay: 1, ease: "easeInOut" }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => signIn("google")}
+                type="button"
                 className="w-full h-14 flex items-center justify-center rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
               >
                 <FcGoogle size={24} />

@@ -1,12 +1,14 @@
-// 1. Import 'auth' from your custom lib file instead of NextAuth
-import { auth } from "@/lib/auth";
+// app/profile/page.tsx
+// 1. Import getServerSession instead of auth
+import { getServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-  // 2. Call auth() directly without passing any options!
-  const session = await auth();
+  // 2. Use the dedicated server session helper
+  const session = await getServerSession();
 
-  if (!session?.user?.email) {
+  // 3. Check for the user
+  if (!session?.user) {
     redirect("/login");
   }
 
@@ -24,7 +26,7 @@ export default async function ProfilePage() {
           </p>
           <p>
             <span className="font-semibold">Role:</span>{" "}
-            {(session.user as any)?.role || "Student"}
+            {session.user.role || "Student"}
           </p>
         </div>
 

@@ -1,76 +1,83 @@
 // lib/auth.ts
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { NextRequest, NextResponse } from "next/server";
+import { cookies, headers } from "next/headers";
+import { verifyAccessToken, type JwtPayload } from "./jwt";
 
-export const {
-  handlers, // Creates { GET, POST } for /api/auth/[...nextauth]/route.ts
-  auth,
-  signIn,
-  signOut,
-} = NextAuth({
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+export interface Session {
+  user: JwtPayload | null;
+}
 
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          });
+// Cookie names
+export const ACCESS_COOKIE_NAME = "accessToken";
+export const REFRESH_COOKIE_NAME = "refreshToken";
 
-          if (!user || !user.password) return null;
-
-          const isValid = await bcrypt.compare(
-            credentials.password as string,
-            user.password,
-          );
-
-          if (!isValid) return null;
-
-          // NextAuth expects these properties returned to map to your JWT & Session
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name ?? null,
-            role: user.role, // Attach custom properties here
-          };
-        } catch (err) {
-          console.error("Auth error in authorize:", err);
-          return null;
-        }
-      },
-    }),
-  ],
-
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = (user as any).role; // Type assertion since standard User lacks 'role'
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        (session.user as any).role = token.role; // Type assertion for custom user sessions
-      }
-      return session;
-    },
-  },
-
-  pages: {
-    signIn: "/login", // Updated to match the '/login' route we solved earlier
-  },
-
-  session: { strategy: "jwt" },
-
-  secret: process.env.AUTH_SECRET,
+const cookieOptions = (maxAge: number) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  maxAge,
+  path: "/",
 });
+
+/**
+ * HELPER: Set Cookies on a Response object
+ */
+export const setAuthCookies = (
+  res: NextResponse,
+  accessToken: string,
+  refreshToken: string,
+) => {
+  res.cookies.set(ACCESS_COOKIE_NAME, accessToken, cookieOptions(15 * 60));
+  res.cookies.set(
+    REFRESH_COOKIE_NAME,
+    refreshToken,
+    cookieOptions(7 * 24 * 60 * 60),
+  );
+};
+
+/**
+ * HELPER: Clear Cookies on a Response object
+ */
+export const clearAuthCookies = (res: NextResponse) => {
+  res.cookies.set(ACCESS_COOKIE_NAME, "", { ...cookieOptions(0), maxAge: 0 });
+  res.cookies.set(REFRESH_COOKIE_NAME, "", { ...cookieOptions(0), maxAge: 0 });
+};
+
+/**
+ * FOR SERVER COMPONENTS (Pages/Layouts)
+ * Use this inside 'async' Server Components.
+ */
+export async function getServerSession(): Promise<Session> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ACCESS_COOKIE_NAME)?.value;
+
+  if (!token) return { user: null };
+
+  const payload = verifyAccessToken(token);
+  return { user: payload };
+}
+
+/**
+ * FOR MIDDLEWARE & API ROUTES
+ * Use this when you have access to a Request object.
+ */
+export function auth(req: NextRequest): Session {
+  // Safety check to prevent "reading properties of undefined"
+  if (!req) return { user: null };
+
+  // 1. Try httpOnly cookie first
+  let token = req.cookies?.get(ACCESS_COOKIE_NAME)?.value;
+
+  // 2. Fallback to Authorization: Bearer
+  if (!token) {
+    const authHeader = req.headers.get("authorization");
+    token = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : undefined;
+  }
+
+  if (!token) return { user: null };
+
+  const payload = verifyAccessToken(token);
+  return { user: payload };
+}
