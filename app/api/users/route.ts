@@ -1,3 +1,4 @@
+// app/api/users/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -11,7 +12,7 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
-        image: true, // 👈 Added so the frontend can fetch image URLs!
+        image: true,
         createdAt: true,
         _count: {
           select: {
@@ -24,7 +25,6 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    // Count metrics directly from the fetched array
     const totalUsers = users.length;
     const students = users.filter((u) => u.role === "STUDENT").length;
     const teachers = users.filter((u) => u.role === "TEACHER").length;
@@ -50,8 +50,6 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    // 👈 Destructured image from the incoming body payload!
     const { name, email, password, role, image } = body;
 
     if (!email || !password) {
@@ -61,7 +59,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if email is already taken
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json(
@@ -70,7 +67,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash the password safely
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await prisma.user.create({
@@ -83,7 +79,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // Exclude password from the returned object for security
+    // Strip password for safety
     const { password: _, ...userWithoutPassword } = newUser;
 
     return NextResponse.json(userWithoutPassword, { status: 201 });

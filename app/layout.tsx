@@ -1,5 +1,4 @@
 // app/layout.tsx
-import Navbar from "@/components/shared/Navbar";
 import Providers from "@/components/providers";
 import "./globals.css";
 
@@ -17,7 +16,6 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          <Navbar /> {/* Now it's on every page! */}
           <main>{children}</main>
         </Providers>
       </body>

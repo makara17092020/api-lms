@@ -14,10 +14,10 @@ import {
   Loader2,
   AlertCircle,
   GraduationCap,
+  ArrowLeft,
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 
-// Variants are identical to Register page for 100% consistency
 const containerVariants = {
   hidden: { opacity: 0, y: 40 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeInOut } },
@@ -52,7 +52,6 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // FIX: Fetching your custom login API instead of using next-auth
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,8 +64,14 @@ export default function LoginPage() {
         throw new Error(data.error || "Invalid email or password");
       }
 
-      // Success! Cookies are set by the server via setAuthCookies
-      router.push("/profile");
+      if (data.user?.role === "SUPER_ADMIN") {
+        router.push("/admin");
+      } else if (data.user?.role === "TEACHER") {
+        router.push("/teacher");
+      } else {
+        router.push("/student");
+      }
+
       router.refresh();
     } catch (err: any) {
       setError(
@@ -78,7 +83,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-slate-100 flex items-center justify-center p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-slate-100 flex items-center justify-center p-4 md:p-8 relative">
+      {/* --- ADDED: Floating Back to Home Button --- */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="absolute top-6 left-6 z-20"
+      ></motion.div>
+
       <motion.div
         initial="hidden"
         animate="visible"
@@ -253,6 +266,25 @@ export default function LoginPage() {
 
         {/* ILLUSTRATION SIDE */}
         <div className="hidden lg:flex flex-1 lg:w-7/12 relative overflow-hidden bg-linear-to-br from-indigo-950 via-violet-950 to-indigo-950">
+          {/* glassmorphism Back to Home Button placed inside the image container */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5, duration: 0.6, ease: "easeInOut" }}
+            className="absolute top-6 left-6 z-20"
+          >
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-medium text-sm rounded-xl shadow-sm border border-white/20 transition-all active:scale-95 group"
+            >
+              <ArrowLeft
+                size={16}
+                className="text-white/80 group-hover:text-white group-hover:-translate-x-0.5 transition-transform"
+              />
+              Back to Home
+            </Link>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}

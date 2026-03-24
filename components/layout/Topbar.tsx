@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut, Bell } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface TopbarProps {
   adminName?: string;
@@ -13,10 +14,22 @@ export default function Topbar({
   adminRole = "Super Admin",
   adminImage = null,
 }: TopbarProps) {
-  const handleLogout = () => {
-    if (confirm("Are you sure you want to log out?")) {
-      // Add NextAuth signOut() or your logic here
-      window.location.href = "/login";
+  const router = useRouter(); // Next.js standard router!
+
+  const handleLogout = async () => {
+    if (!confirm("Are you sure you want to log out?")) return;
+
+    try {
+      // 1. Tell the server to wipe the browser auth cookies!
+      await fetch("/api/auth/logout", { method: "POST" });
+
+      // 2. ✅ FIX: Redirect the browser back to the app/page.tsx root directory
+      router.push("/");
+      router.refresh(); // wipes server router cache
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Fallback redirect if API fetch breaks
+      window.location.href = "/";
     }
   };
 
@@ -40,7 +53,6 @@ export default function Topbar({
 
         {/* Profile Avatar & Info */}
         <div className="flex items-center gap-3">
-          {/* 👈 Dynamic Avatar with standard HTML Img tag */}
           <div className="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden border border-gray-200">
             {adminImage ? (
               <img

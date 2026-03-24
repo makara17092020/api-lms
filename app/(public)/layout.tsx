@@ -1,3 +1,4 @@
+// app/(public)/layout.tsx
 import Navbar from "@/components/shared/Navbar";
 
 export default function PublicLayout({
@@ -7,8 +8,9 @@ export default function PublicLayout({
 }) {
   return (
     <>
-      <Navbar /> {/* Shows ONLY on landing pages, about us, etc. */}
-      <main>{children}</main>
+      <Navbar />{" "}
+      {/* ✅ Navbar only renders for the homepage and public pages! */}
+      <main className="min-h-screen bg-white">{children}</main>
     </>
   );
 }
