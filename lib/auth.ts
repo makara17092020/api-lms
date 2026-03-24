@@ -1,6 +1,7 @@
 // lib/auth.ts
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -11,6 +12,10 @@ export const {
   signOut,
 } = NextAuth({
   providers: [
+    GoogleProvider({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -50,6 +55,39 @@ export const {
   ],
 
   callbacks: {
+    signIn: async ({ user, account, profile }) => {
+      if (account?.provider === "google") {
+        try {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email! },
+          });
+
+          if (!existingUser) {
+            // Create new user for Google OAuth
+            await prisma.user.create({
+              data: {
+                email: user.email!,
+                name: user.name,
+                image: user.image,
+                password: "", // OAuth users don't need passwords
+                role: "STUDENT", // Default role
+              },
+            });
+          }
+          return true;
+        } catch (error) {
+          console.error("Error during Google sign-in:", error);
+          return false;
+        }
+      }
+      return true;
+    },
+    redirect({ url, baseUrl }) {
+      // For social auth, return to dashboard by default
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith(baseUrl)) return url;
+      return `${baseUrl}/dashboard`;
+    },
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -67,10 +105,11 @@ export const {
   },
 
   pages: {
-    signIn: "/login", // Updated to match the '/login' route we solved earlier
+    signIn: "/login",
+    newUser: "/profile", // Optional: redirect new OAuth users to profile page as fallback
   },
 
   session: { strategy: "jwt" },
 
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 });

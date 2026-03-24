@@ -68,7 +68,7 @@ export default function RegisterPage() {
         // Attempt to parse the error message from your API response
         const data = await response.json();
         throw new Error(
-          data.message || "Something went wrong during registration.",
+          data.error || data.message || "Something went wrong during registration.",
         );
       }
 
@@ -262,7 +262,7 @@ export default function RegisterPage() {
                 transition={{ delay: 1, ease: EASE }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => signIn("google")}
+                onClick={() => signIn("google", { redirectTo: "/profile" })}
                 className="w-full h-14 flex items-center justify-center rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
               >
                 <FcGoogle size={24} />

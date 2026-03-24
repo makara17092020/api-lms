@@ -6,8 +6,8 @@ export async function POST(req: Request) {
   try {
     const { name, email, password, role } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: "Name, email, and password are required." }, { status: 400 });
     }
 
     const userExists = await prisma.user.findUnique({ where: { email } });

@@ -231,7 +231,7 @@ export default function LoginPage() {
                 transition={{ delay: 1, ease: "easeInOut" }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => signIn("google")}
+                onClick={() => signIn("google", { redirectTo: "/profile" })}
                 className="w-full h-14 flex items-center justify-center rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
               >
                 <FcGoogle size={24} />
