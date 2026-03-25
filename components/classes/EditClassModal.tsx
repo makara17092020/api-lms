@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { X, Loader2, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
 import { ClassModel, Teacher } from "@/app/(dashboard)/admin/classes/page";
 
 interface EditClassModalProps {
@@ -25,6 +25,7 @@ export default function EditClassModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting update for:", cls.id, { className, teacherId }); // DEBUG LOG
     setLoading(true);
     setError("");
 
@@ -34,10 +35,18 @@ export default function EditClassModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ className, teacherId }),
       });
-      if (!res.ok) throw new Error("Update failed");
-      onSuccess();
-      onClose();
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Update failed");
+      }
+
+      console.log("Update successful!");
+      onSuccess(); // This triggers fetchInitialData in page.tsx
+      onClose(); // This closes the modal
     } catch (err: any) {
+      console.error("Submit Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -54,9 +63,9 @@ export default function EditClassModal({
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
       />
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         className="relative bg-white w-full max-w-md p-6 rounded-2xl shadow-xl z-10"
       >
         <div className="flex justify-between items-center mb-6">
@@ -108,14 +117,14 @@ export default function EditClassModal({
           </div>
 
           <button
-            type="submit"
+            type="submit" // IMPORTANT: Added explicit type
             disabled={loading}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
           >
             {loading ? (
               <Loader2 className="animate-spin" size={16} />
             ) : (
-              "Update Class Changes"
+              "Save Changes"
             )}
           </button>
         </form>
