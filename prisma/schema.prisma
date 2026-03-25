@@ -19,12 +19,12 @@ enum Role {
 
 // 2. User Entity
 model User {
-  id           String   @id @default(cuid())
-  name         String?
-  email        String   @unique
-  password     String
-  role         Role     @default(STUDENT)
-  image        String?
+  id          String       @id @default(cuid())
+  name        String?
+  email       String       @unique
+  password    String?
+  role        Role         @default(STUDENT)
+  image       String?      
   refreshToken String?
   answers      Answer[]
 
