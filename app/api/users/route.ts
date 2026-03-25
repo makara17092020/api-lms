@@ -1,12 +1,20 @@
-// app/api/users/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// --- 1. GET ALL USERS + METRICS ---
-export async function GET() {
+// --- 1. GET ALL USERS + METRICS (Can filter by ?role=TEACHER) ---
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const roleQuery = url.searchParams.get("role"); // Grabs "TEACHER" or "STUDENT" if passed
+
   try {
+    // Determine filter constraints dynamically
+    const whereClause = roleQuery
+      ? { role: roleQuery as "SUPER_ADMIN" | "TEACHER" | "STUDENT" }
+      : {};
+
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -25,6 +33,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
+    // Handle metrics generation based on the DB count context
     const totalUsers = users.length;
     const students = users.filter((u) => u.role === "STUDENT").length;
     const teachers = users.filter((u) => u.role === "TEACHER").length;
