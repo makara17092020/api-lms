@@ -10,7 +10,11 @@
     "seed": "npx prisma db seed"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@google/genai": "^1.46.0",
+=======
+    "@auth/prisma-adapter": "^2.11.1",
+>>>>>>> f2c1b3b (fix error)
     "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
