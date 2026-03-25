@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
-import { ClassService } from "@/app/services/class.servide"; // Ensure correct spelling: .service vs .servid
+// Check spelling: Ensure it's .service and not .servide
+import { ClassService } from "@/app/services/class.servide";
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -9,10 +10,17 @@ async function getAuth() {
   if (!token) return null;
 
   try {
-    const secret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET!);
+    // Standardizing to your .env variable for security
+    const secretKey = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+    if (!secretKey) {
+      console.error("Missing JWT Secret in Environment Variables");
+      return null;
+    }
+    const secret = new TextEncoder().encode(secretKey);
     const { payload } = await jwtVerify(token, secret);
     return payload as { id: string; role: string };
-  } catch {
+  } catch (err) {
+    console.error("JWT Verification failed:", err);
     return null;
   }
 }
@@ -21,10 +29,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ classId: string }> },
 ) {
-  const { classId } = await params; // Required for Next.js 15
+  // 1. Unwrapping params for Next.js 15/16 compatibility
+  const { classId } = await params;
   const auth = await getAuth();
 
-  if (!auth || (auth.role !== "TEACHER" && auth.role !== "SUPER_ADMIN")) {
+  // 2. Authorization Check (Allow both Super Admins and Teachers)
+  if (!auth || (auth.role !== "SUPER_ADMIN" && auth.role !== "TEACHER")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -38,22 +48,25 @@ export async function POST(
       );
     }
 
+    // 3. Database Operation via Service
     const enrollment = await ClassService.enrollStudent(classId, studentId);
 
     return NextResponse.json({
-      message: "Enrollment successful",
+      message: "Student enrolled successfully",
       enrollment,
     });
   } catch (error: any) {
-    // Prisma unique constraint error code
+    // 4. Handle Prisma Unique Constraint (P2002: Student already enrolled)
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "This student is already enrolled in this class." },
         { status: 409 },
       );
     }
+
+    console.error("Enrollment error:", error);
     return NextResponse.json(
-      { error: "Server error during enrollment" },
+      { error: error.message || "Server error during enrollment" },
       { status: 500 },
     );
   }

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // Sub-components
 import ClassCard from "@/components/classes/ClassCard";
 import CreateClassModal from "@/components/classes/CreateClassModal";
-import EditClassModal from "@/components/classes/AddStudentModal";
+import EditClassModal from "@/components/classes/EditClassModal";
 import AddStudentModal from "@/components/classes/AddStudentModal";
 import LoadingSkeleton from "@/components/classes/LoadingSkeleton";
 import EmptyState from "@/components/classes/EmptyState";
@@ -156,6 +156,7 @@ export default function AdminClassesPage() {
 
       {/* --- State Modals --- */}
       <AnimatePresence>
+        {/* CREATE MODAL */}
         {isCreateOpen && (
           <CreateClassModal
             teachers={teachers}
@@ -164,15 +165,17 @@ export default function AdminClassesPage() {
           />
         )}
 
+        {/* EDIT MODAL - THIS WAS THE BUGGY PART */}
         {editingClass && (
           <EditClassModal
             cls={editingClass}
-            students={students}
+            teachers={teachers} // Pass teachers, not students
             onClose={() => setEditingClass(null)}
             onSuccess={fetchInitialData}
           />
         )}
 
+        {/* ADD STUDENT MODAL */}
         {enrollingClass && (
           <AddStudentModal
             cls={enrollingClass}

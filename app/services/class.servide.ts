@@ -109,7 +109,7 @@ export class ClassService {
   static async unenrollStudent(classId: string, studentId: string) {
     return prisma.enrollment.delete({
       where: {
-        classId_studentId: { classId, studentId },
+        classId_studentId: { classId, studentId }, // Matches the @@unique in your schema
       },
     });
   }

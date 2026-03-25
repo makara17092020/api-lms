@@ -30,14 +30,19 @@ export default function AddStudentModal({
     setError("");
 
     try {
+      // PATH MUST MATCH: app/api/classes/[classId]/students/route.ts
       const res = await fetch(`/api/classes/${cls.id}/students`, {
-        // using your backend's enroll endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Enrollment failed");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Enrollment failed");
+      }
+
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -66,15 +71,19 @@ export default function AddStudentModal({
           <h2 className="text-xl font-bold text-gray-900">Enroll Student</h2>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400"
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-          <p className="text-xs text-gray-500">Target Class</p>
-          <p className="text-sm font-semibold text-gray-900">{cls.className}</p>
+        <div className="mb-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-indigo-600">
+            Enrolling to:
+          </p>
+          <p className="text-sm font-semibold text-indigo-900">
+            {cls.className}
+          </p>
         </div>
 
         {error && (
@@ -94,7 +103,7 @@ export default function AddStudentModal({
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
             >
-              <option value="">Choose student indexes...</option>
+              <option value="">Choose a student...</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} ({s.email})
@@ -106,7 +115,7 @@ export default function AddStudentModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+            className="w-full py-3 bg-gray-900 hover:bg-black text-white font-medium text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
           >
             {loading ? (
               <Loader2 className="animate-spin" size={16} />
