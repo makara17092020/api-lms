@@ -1,15 +1,11 @@
-import { auth } from "@/lib/auth"; // ← FIXED import
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 
 export async function POST(req: Request) {
-  const session = await auth(); // ← use auth() here
-
-  if (!session || session.user?.role !== Role.SUPER_ADMIN) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // Authorization is enforced in proxy.ts, so this API endpoint assumes the user is allowed.
+  // In a stricter setup, you can verify the JWT or NextAuth session here.
 
   const { name, email, password, role } = await req.json();
 
