@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
 import { motion, AnimatePresence, cubicBezier } from "framer-motion";
 import {
   User,
-  Mail,
   Lock,
   Eye,
   EyeOff,
@@ -16,7 +14,6 @@ import {
   AlertCircle,
   GraduationCap,
 } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
 
 // ===================== UNIFIED ANIMATION CONFIG =====================
 const EASE = cubicBezier(0.23, 1, 0.32, 1);
@@ -40,55 +37,85 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
 };
 
-export default function RegisterPage() {
+export default function CompleteProfilePage() {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session) {
+      router.push("/login");
+      return;
+    }
+
+    if (session.user.needsCompletion === false) {
+      // User already completed profile, redirect to dashboard
+      redirectToDashboard(session.user.role);
+      return;
+    }
+
+    // Pre-fill name from session if available
+    if (session.user.name) {
+      setName(session.user.name);
+    }
+  }, [session, status, router]);
+
+  const redirectToDashboard = (role: string) => {
+    if (role === "SUPER_ADMIN") {
+      router.push("/admin");
+    } else if (role === "TEACHER") {
+      router.push("/teacher");
+    } else {
+      router.push("/student");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    if (!name.trim() || !password) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+
     try {
-      // FIX 1: Pointed to your actual API route path
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/complete-profile", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // FIX 2: Your API returns { error: "message" }, not { message: "message" }
-        throw new Error(data.error || "Registration failed");
+        throw new Error(data.error || "Failed to complete profile");
       }
 
-      // Success! Cookies are set by the server via setAuthCookies
-      router.push("/profile");
-      router.refresh();
+      // Redirect to dashboard based on role
+      redirectToDashboard(data.user.role);
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setError("");
-    setLoading(true);
-    await signIn("google", {
-      callbackUrl: `${window.location.origin}/`,
-    });
-    setLoading(false);
-  };
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-slate-100 flex items-center justify-center p-4 md:p-8">
@@ -120,10 +147,10 @@ export default function RegisterPage() {
                 transition={{ delay: 0.2, ease: EASE }}
               >
                 <h1 className="text-4xl font-semibold tracking-tighter text-gray-950">
-                  Create account
+                  Complete your profile
                 </h1>
                 <p className="text-gray-500 mt-1 text-lg">
-                  Join thousands mastering skills with AI
+                  Just a few more details to get started
                 </p>
               </motion.div>
             </div>
@@ -141,7 +168,6 @@ export default function RegisterPage() {
               )}
             </AnimatePresence>
 
-            {/* Registration Form */}
             <form onSubmit={handleSubmit}>
               <motion.div
                 variants={staggerContainer}
@@ -169,29 +195,6 @@ export default function RegisterPage() {
                     className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
                   >
                     Full name
-                  </label>
-                </motion.div>
-
-                {/* Email */}
-                <motion.div variants={itemVariants} className="relative">
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder=" "
-                    className="peer w-full rounded-3xl border border-gray-200 bg-white px-5 py-5 pl-12 text-lg focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/70 outline-none transition-all duration-300"
-                  />
-                  <Mail
-                    className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500 transition-colors"
-                    size={22}
-                  />
-                  <label
-                    htmlFor="email"
-                    className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
-                  >
-                    Email address
                   </label>
                 </motion.div>
 
@@ -225,7 +228,6 @@ export default function RegisterPage() {
                   </button>
                 </motion.div>
 
-                {/* Create Account Button */}
                 <motion.button
                   variants={itemVariants}
                   type="submit"
@@ -237,55 +239,16 @@ export default function RegisterPage() {
                   <span className="relative z-10 flex items-center justify-center gap-3">
                     {loading ? (
                       <>
-                        <Loader2 className="animate-spin" size={20} />{" "}
-                        Creating...
+                        <Loader2 className="animate-spin" size={20} /> Completing...
                       </>
                     ) : (
-                      "Create Account"
+                      "Complete Profile"
                     )}
                   </span>
                   <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-0" />
                 </motion.button>
               </motion.div>
             </form>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="mt-8"
-            >
-              <div className="flex items-center gap-4 my-6">
-                <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-400 font-medium tracking-widest">
-                  OR CONTINUE WITH
-                </span>
-                <div className="h-px flex-1 bg-gray-200" />
-              </div>
-
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, ease: EASE }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type="button"
-                onClick={handleGoogleSignIn}
-                className="w-full h-14 flex items-center justify-center rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
-              >
-                <FcGoogle size={24} />
-              </motion.button>
-            </motion.div>
-
-            <div className="mt-10 text-center text-sm text-gray-500">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
           </div>
         </motion.div>
 
@@ -305,15 +268,6 @@ export default function RegisterPage() {
               priority
             />
           </motion.div>
-          <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
-          <div className="absolute bottom-16 left-16 max-w-md text-white">
-            <h2 className="text-5xl font-semibold tracking-tighter leading-none">
-              Start your <span className="text-violet-300">journey</span>
-            </h2>
-            <p className="mt-6 text-xl text-white/80">
-              Join the most delightful AI-powered learning experience.
-            </p>
-          </div>
         </div>
       </motion.div>
     </div>

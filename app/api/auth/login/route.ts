@@ -20,7 +20,21 @@ export async function POST(req: Request) {
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found. Please sign up or use Google login." },
+        { status: 404 },
+      );
+    }
+
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "This account is linked with Google. Please sign in with Google." },
+        { status: 401 },
+      );
+    }
+
+    if (!(await bcrypt.compare(password, user.password))) {
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 },
