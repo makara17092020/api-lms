@@ -33,10 +33,27 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Handle metrics generation based on the DB count context
-    const totalUsers = users.length;
-    const students = users.filter((u) => u.role === "STUDENT").length;
-    const teachers = users.filter((u) => u.role === "TEACHER").length;
+    // or calculate only on the filtered context if a filter is present.
+    let totalUsers = users.length;
+    let students = users.filter((u) => u.role === "STUDENT").length;
+    let teachers = users.filter((u) => u.role === "TEACHER").length;
+
+    // If we are filtering just for drop-downs, let's pull accurate global metrics anyway
+    if (roleQuery) {
+      const globalCounts = await prisma.user.groupBy({
+        by: ["role"],
+        _count: { _all: true },
+      });
+
+      totalUsers = globalCounts.reduce(
+        (acc, curr) => acc + curr._count._all,
+        0,
+      );
+      students =
+        globalCounts.find((g) => g.role === "STUDENT")?._count._all || 0;
+      teachers =
+        globalCounts.find((g) => g.role === "TEACHER")?._count._all || 0;
+    }
 
     return NextResponse.json({
       metrics: {

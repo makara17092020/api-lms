@@ -1,4 +1,3 @@
-// services/class.service.ts
 import { prisma } from "@/lib/prisma";
 
 export class ClassService {
@@ -25,7 +24,7 @@ export class ClassService {
   }
 
   /**
-   * 3. Update Class (Now supports changing the Instructor)
+   * 3. Update Class (Supports changing Instructor)
    */
   static async updateClass(
     classId: string,
@@ -36,7 +35,7 @@ export class ClassService {
       where: { id: classId },
       data: {
         className,
-        teacherId, // This allows reassigning the class to a different teacher
+        teacherId,
       },
       include: {
         teacher: { select: { id: true, name: true, email: true } },
@@ -54,13 +53,33 @@ export class ClassService {
   }
 
   /**
-   * 5. Get classes taught by a teacher
+   * 5. Get classes taught by a teacher (UPDATED to pull live student study plans!)
    */
   static async getClassesByTeacher(teacherId: string) {
     return prisma.class.findMany({
       where: { teacherId },
       include: {
         _count: { select: { enrollments: true } }, // Pull metrics
+        enrollments: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                studyPlans: {
+                  include: {
+                    tasks: {
+                      orderBy: { dayNumber: "asc" },
+                    },
+                  },
+                  orderBy: { createdAt: "desc" },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -82,6 +101,7 @@ export class ClassService {
       orderBy: { createdAt: "desc" },
     });
 
+    // Isolate the class object and return it
     return enrollments.map((e) => e.class);
   }
 
@@ -109,7 +129,7 @@ export class ClassService {
   static async unenrollStudent(classId: string, studentId: string) {
     return prisma.enrollment.delete({
       where: {
-        classId_studentId: { classId, studentId }, // Matches the @@unique in your schema
+        classId_studentId: { classId, studentId }, // Matches the @@unique in schema
       },
     });
   }
