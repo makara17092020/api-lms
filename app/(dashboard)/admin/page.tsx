@@ -1,10 +1,10 @@
-// AdminDashboardPage.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { Users, GraduationCap, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import UserTrendsChart from "@/components/dashboard/UserTrendsChart";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton"; // 👈 Pull in skeletons
 
 interface DashboardMetrics {
   totalUsers: number;
@@ -19,13 +19,36 @@ export default function AdminDashboardPage() {
     teachers: 0,
   });
 
+  const [loading, setLoading] = useState(true); // 👈 Initial load trigger
+
   useEffect(() => {
-    fetch("/api/users")
-      .then((res) => res.json())
-      .then((data) => {
+    // 1. Function to pull metrics
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch("/api/users");
+        const data = await res.json();
         if (data.metrics) setMetrics(data.metrics);
-      })
-      .catch(() => {}); // Silent fail – chart handles its own data
+      } catch (error) {
+        console.error("Metric fetch failed", error);
+      } finally {
+        setLoading(false); // Drop initial loader
+      }
+    };
+
+    fetchMetrics();
+
+    // 2. 📡 Listen for Sidebar manual refresh broadcast
+    const handleRefreshEvent = () => {
+      setLoading(true); // Trigger UI Skeletons
+      fetchMetrics(); // Re-fetch active platform metrics
+    };
+
+    window.addEventListener("trigger-dashboard-refresh", handleRefreshEvent);
+    return () =>
+      window.removeEventListener(
+        "trigger-dashboard-refresh",
+        handleRefreshEvent,
+      );
   }, []);
 
   const containerVars = {
@@ -37,9 +60,13 @@ export default function AdminDashboardPage() {
     },
   };
 
+  // 🚦 Show pulse skeleton viewport if loading or refreshing
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="relative min-h-screen p-6 md:p-10 overflow-hidden bg-linear-to-br from-indigo-50/50 via-white to-purple-50/50">
-      {/* Background Decorative Blobs - iOS Style */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/30 rounded-full blur-[120px] -z-10 animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-200/30 rounded-full blur-[120px] -z-10" />
 
@@ -49,7 +76,6 @@ export default function AdminDashboardPage() {
         animate="animate"
         className="max-w-7xl mx-auto space-y-10"
       >
-        {/* Header Section */}
         <header>
           <motion.h1
             className="text-4xl font-extrabold text-gray-900 tracking-tight"
@@ -71,7 +97,6 @@ export default function AdminDashboardPage() {
           </motion.p>
         </header>
 
-        {/* Stat Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <StatCard
             title="Total Platform Users"
@@ -96,14 +121,12 @@ export default function AdminDashboardPage() {
           />
         </div>
 
-        {/* Self-contained Chart Component */}
         <UserTrendsChart />
       </motion.div>
     </div>
   );
 }
 
-// Reusable Glass Stat Card
 function StatCard({ title, value, icon: Icon, gradient, delay }: any) {
   return (
     <motion.div

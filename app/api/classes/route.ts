@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { jwtVerify } from "jose"; // Using lightweight 'jose' for Next.js 15+ Edge Runtimes
+import { jwtVerify } from "jose"; // Next.js 15+ compatible jwt verification
 import { cookies } from "next/headers";
-import { ClassService } from "@/app/services/class.servide";
+import { ClassService } from "@/app/services/class.servide"; // Keep your filename typo if real!
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -17,7 +17,6 @@ async function getAuth() {
   }
 }
 
-// POST: Create Class
 export async function POST(req: Request) {
   const auth = await getAuth();
   if (!auth)
@@ -39,7 +38,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // If super admin creating, use the teacherId from dropdown, otherwise use own auth.id
     const targetTeacherId =
       auth.role === "SUPER_ADMIN" ? teacherId || auth.id : auth.id;
 
@@ -53,7 +51,6 @@ export async function POST(req: Request) {
   }
 }
 
-// GET: Filter classes by context (?type=teacher OR ?type=student)
 export async function GET(req: Request) {
   const auth = await getAuth();
   if (!auth)
@@ -63,14 +60,13 @@ export async function GET(req: Request) {
   const type = url.searchParams.get("type");
 
   try {
-    // If Admin is asking for 'teacher' type, they likely want to see EVERYTHING
+    // If Admin asks for 'teacher' type, load ALL classes with joined student data
     if (type === "teacher" && auth.role === "SUPER_ADMIN") {
-      // Create a new method in your service or use an existing one that returns all
       const classes = await ClassService.getAllClasses();
       return NextResponse.json(classes);
     }
 
-    // If a regular Teacher is asking, filter by their specific ID
+    // If a regular Teacher asks, load their classes (and their nested students)
     if (type === "teacher" && auth.role === "TEACHER") {
       const classes = await ClassService.getClassesByTeacher(auth.id);
       return NextResponse.json(classes);

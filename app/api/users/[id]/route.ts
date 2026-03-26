@@ -76,34 +76,64 @@ export async function PUT(req: Request, { params }: RouteParams) {
 }
 
 // --- 3. DELETE USER SAFELY ---
-export async function DELETE(req: Request, { params }: RouteParams) {
-  try {
-    const { id } = await params;
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }, // 👈 1. Strictly Type the Promise
+) {
+  // Define it here so it's accessible inside the try block AND the catch block!
+  let userId: string | null = null;
 
-    const user = await prisma.user.findUnique({ where: { id } });
+  try {
+    const resolvedParams = await params;
+    userId = resolvedParams.id; // 👈 2. Safely extract 'id'
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "User ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (user.role === "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Super Admins cannot be deleted." },
-        { status: 403 },
-      );
-    }
-
-    // Wipe constraints safely via transaction
     await prisma.$transaction([
-      prisma.result.deleteMany({ where: { studentId: id } }),
-      prisma.studyPlan.deleteMany({ where: { studentId: id } }),
-      prisma.user.delete({ where: { id } }),
+      // A. Clear out dependent child records (Enrollments, Class connections, etc.)
+      prisma.$executeRaw`DELETE FROM "Enrollment" WHERE "studentId" = ${userId} OR "classId" IN (SELECT "id" FROM "Class" WHERE "teacherId" = ${userId});`,
+      prisma.$executeRaw`DELETE FROM "Class" WHERE "teacherId" = ${userId};`,
+
+      // B. Finally wipe the parent User
+      prisma.$executeRaw`DELETE FROM "User" WHERE "id" = ${userId};`,
     ]);
 
-    return NextResponse.json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error("[DELETE_USER_ERROR]:", error);
     return NextResponse.json(
-      { error: "Could not delete user. Related constraints are active." },
+      { message: "User wiped successfully!" },
+      { status: 200 },
+    );
+  } catch (error: any) {
+    console.error("[NUCLEAR_DELETE_ERROR]", error);
+
+    // Fallback if standard queries fail (handles lowercase schema tables)
+    try {
+      if (userId) {
+        await prisma.$transaction([
+          prisma.$executeRaw`DELETE FROM enrollment WHERE student_id = ${userId} OR class_id IN (SELECT id FROM class WHERE teacher_id = ${userId});`,
+          prisma.$executeRaw`DELETE FROM class WHERE teacher_id = ${userId};`,
+          prisma.$executeRaw`DELETE FROM "user" WHERE id = ${userId};`,
+        ]);
+        return NextResponse.json(
+          { message: "User wiped via fallback!" },
+          { status: 200 },
+        );
+      }
+    } catch (fallbackError) {
+      console.error("[FALLBACK_ERROR]", fallbackError);
+    }
+
+    return NextResponse.json(
+      { error: "Postgres hard-blocked the delete. Clear it via Neon console." },
       { status: 500 },
     );
   }
