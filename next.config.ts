@@ -6,7 +6,13 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "res.cloudinary.com", // Allow Cloudinary images to render
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "your-storage.com", // This stops it from crashing on dummy links!
+        pathname: "/**",
       },
     ],
   },
