@@ -71,7 +71,7 @@ export default function RegisterPage() {
       }
 
       // Success! Cookies are set by the server via setAuthCookies
-      router.push("/profile");
+      router.push("/dashboard/student");
       router.refresh();
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");

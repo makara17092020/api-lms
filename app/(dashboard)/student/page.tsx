@@ -1,6 +1,3 @@
-// ========================
-// UPDATED File: app/student/dashboard/page.tsx
-// ========================
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,7 +10,7 @@ import StatsSection from "@/components/students/StatsSection";
 import ActiveClassesSection from "@/components/students/ActiveClassesSection";
 import GeneratePlanForm from "@/components/students/GeneratePlanForm";
 
-// NEW: Import the reusable skeleton
+// Import the reusable skeleton
 import LoadingSkeleton from "@/components/students/LoadingSkeleton";
 
 interface ClassItem {
@@ -26,9 +23,14 @@ interface ClassItem {
 
 export default function StudentDashboardPage() {
   const router = useRouter();
+
+  // Data State
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [studyPlanCount, setStudyPlanCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // UI State for the "Premium Focus" effect
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Form state
   const [level, setLevel] = useState<"Beginner" | "Intermediate" | "Advanced">(
@@ -67,10 +69,8 @@ export default function StudentDashboardPage() {
       setError("Please enter a topic or skill.");
       return;
     }
-
     setGenerating(true);
     setError("");
-
     try {
       const res = await fetch("/api/ai/generate-plan", {
         method: "POST",
@@ -81,9 +81,7 @@ export default function StudentDashboardPage() {
           availableTimePerDay: timePerDay,
         }),
       });
-
       if (!res.ok) throw new Error("Failed to generate plan");
-
       setSkill("");
       router.push("/student/plans");
     } catch (err: any) {
@@ -94,35 +92,48 @@ export default function StudentDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-indigo-50/70 via-white to-fuchsia-50/70 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950">
-      {/* Background blobs (unchanged) */}
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 overflow-x-hidden">
+      {/* 1. FIXED BACKGROUND LAYER */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute left-[-10%] top-[-15%] h-96 w-96 rounded-full bg-violet-300/20 dark:bg-violet-500/10 blur-3xl" />
-        <div className="absolute bottom-[-20%] right-[-10%] h-96 w-96 rounded-full bg-fuchsia-300/20 dark:bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute left-[-10%] top-[-15%] h-120 w-120 rounded-full bg-violet-400/10 dark:bg-violet-600/5 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] h-120 w-120 rounded-full bg-fuchsia-400/10 dark:bg-fuchsia-600/5 blur-[120px]" />
       </div>
 
-      <div className="px-4 py-6 md:px-8 lg:px-10 max-w-7xl mx-auto">
+      {/* 2. HEADER LAYER: Placed outside of the dimmed content container to stay sharp and clickable */}
+      <div className="relative z-100 px-4 pt-6 md:px-8 lg:px-10 max-w-7xl mx-auto">
+        <HeaderSection
+          studyPlanCount={studyPlanCount}
+          onMenuToggle={(isOpen: boolean) => setIsMenuOpen(isOpen)}
+        />
+      </div>
+
+      {/* 3. MAIN CONTENT LAYER: Successfully handles the dimming logic WITHOUT affecting the header dropdowns */}
+      <main
+        className={`
+          transition-all duration-500 ease-in-out px-4 py-8 md:px-8 lg:px-10 max-w-7xl mx-auto
+          ${isMenuOpen ? "opacity-30 blur-2xl scale-[0.97] pointer-events-none" : "opacity-100 blur-0 scale-100"}
+        `}
+      >
         {loading ? (
-          // Premium full-dashboard skeleton
           <LoadingSkeleton />
         ) : (
-          // Real content (only rendered after loading is false)
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="space-y-10"
           >
-            <HeaderSection studyPlanCount={studyPlanCount} />
             <StatsSection
               totalClasses={classes.length}
               studyPlanCount={studyPlanCount}
             />
+
             <ActiveClassesSection
               classes={classes}
-              loading={false} // no longer needed inside section
+              loading={false}
               router={router}
             />
+
             <GeneratePlanForm
               level={level}
               setLevel={setLevel}
@@ -136,7 +147,7 @@ export default function StudentDashboardPage() {
             />
           </motion.div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
