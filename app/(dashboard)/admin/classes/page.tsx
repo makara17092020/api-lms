@@ -32,6 +32,18 @@ export interface ClassModel {
   _count?: { enrollments: number };
 }
 
+export interface ClassModel {
+  id: string;
+  className: string;
+  teacherId: string;
+  teacher: Teacher;
+  _count?: { enrollments: number };
+  enrollments?: {
+    studentId: string;
+    student: Student;
+  }[]; // Tell TypeScript that an array of enrollments exists!
+}
+
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<ClassModel[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
