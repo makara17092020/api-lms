@@ -6,6 +6,7 @@ import { Users, GraduationCap, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import UserTrendsChart from "@/components/dashboard/UserTrendsChart";
 
+
 interface DashboardMetrics {
   totalUsers: number;
   students: number;
