@@ -8,7 +8,7 @@ export default async function TeacherDashboard() {
 
   // Strict protection: Only TEACHER or SUPER_ADMIN allowed
   if (!session.user) {
-    redirect("/login");
+    redirect("/");
   }
 
   if (session.user.role !== "TEACHER" && session.user.role !== "SUPER_ADMIN") {
