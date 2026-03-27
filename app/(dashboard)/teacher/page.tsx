@@ -6,13 +6,12 @@ import TeacherDashboardContent from "@/components/dashboard/TeacherDashboardCont
 export default async function TeacherDashboard() {
   const session = await getServerSession();
 
-  // Strict protection: Only TEACHER or SUPER_ADMIN allowed
-  if (!session.user) {
-    redirect("/");
+  if (!session?.user) {
+    redirect("/login");
   }
 
   if (session.user.role !== "TEACHER" && session.user.role !== "SUPER_ADMIN") {
-    redirect("/dashboard");        // or "/unauthorized" if you create one
+    redirect("/dashboard");
   }
 
   return <TeacherDashboardContent user={session.user} />;
