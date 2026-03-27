@@ -1,10 +1,14 @@
-// ========================
-// File: app/student/dashboard/GeneratePlanForm.tsx
-// ========================
 "use client";
 
-import { motion } from "framer-motion";
-import { Sparkles, Clock, PlusCircle, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sparkles,
+  Clock,
+  PlusCircle,
+  AlertCircle,
+  Minus,
+  Plus,
+} from "lucide-react";
 
 interface Props {
   level: "Beginner" | "Intermediate" | "Advanced";
@@ -36,6 +40,21 @@ export default function GeneratePlanForm({
     "Tailwind",
     "TypeScript",
   ];
+
+  const MIN_HOURS = 1;
+  const MAX_HOURS = 12;
+
+  const handleDecrease = () => {
+    if (timePerDay > MIN_HOURS) {
+      setTimePerDay(timePerDay - 1);
+    }
+  };
+
+  const handleIncrease = () => {
+    if (timePerDay < MAX_HOURS) {
+      setTimePerDay(timePerDay + 1);
+    }
+  };
 
   return (
     <motion.div
@@ -108,22 +127,71 @@ export default function GeneratePlanForm({
           </div>
         </div>
 
-        {/* Time per day */}
+        {/* 🕒 Time per day (Modernized Stepper) */}
         <div>
-          <label className="block text-xs uppercase font-medium text-violet-300 mb-3 tracking-widest">
-            Hours per day
-          </label>
-          <div className="flex items-center gap-4 bg-white/10 border border-white/20 rounded-3xl px-6 py-5">
-            <Clock className="text-violet-300" size={22} />
-            <input
-              type="number"
-              min={1}
-              max={12}
-              value={timePerDay}
-              onChange={(e) => setTimePerDay(Number(e.target.value))}
-              className="flex-1 bg-transparent text-4xl font-semibold text-white focus:outline-none w-20 tabular-nums"
-            />
-            <span className="text-violet-200 text-lg">hours</span>
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-xs uppercase font-medium text-violet-300 tracking-widest">
+              Hours per day
+            </label>
+            <span className="text-xs text-violet-400/80 font-medium">
+              Adjust your daily study time easily
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-3xl p-4 md:p-6 backdrop-blur-md shadow-inner">
+            {/* Decrease Button */}
+            <motion.button
+              type="button"
+              onClick={handleDecrease}
+              disabled={timePerDay <= MIN_HOURS}
+              whileHover={timePerDay > MIN_HOURS ? { scale: 1.1 } : {}}
+              whileTap={timePerDay > MIN_HOURS ? { scale: 0.9 } : {}}
+              className={`p-4 rounded-2xl flex items-center justify-center transition-all ${
+                timePerDay <= MIN_HOURS
+                  ? "bg-white/5 text-white/20 cursor-not-allowed"
+                  : "bg-white/10 text-white hover:bg-white/20 hover:shadow-[0_0_15px_rgba(167,139,250,0.3)] border border-white/10"
+              }`}
+            >
+              <Minus size={20} />
+            </motion.button>
+
+            {/* Counter Output */}
+            <div className="flex flex-col items-center justify-center min-w-24">
+              <div className="flex items-baseline gap-1">
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={timePerDay}
+                    initial={{ opacity: 0, y: -15, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 15, scale: 0.8 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    className="text-5xl font-extrabold text-white tabular-nums tracking-tight"
+                  >
+                    {timePerDay}
+                  </motion.span>
+                </AnimatePresence>
+                <span className="text-violet-300 text-lg font-medium">h</span>
+              </div>
+              <span className="text-xs text-violet-400/60 font-medium mt-1">
+                daily
+              </span>
+            </div>
+
+            {/* Increase Button */}
+            <motion.button
+              type="button"
+              onClick={handleIncrease}
+              disabled={timePerDay >= MAX_HOURS}
+              whileHover={timePerDay < MAX_HOURS ? { scale: 1.1 } : {}}
+              whileTap={timePerDay < MAX_HOURS ? { scale: 0.9 } : {}}
+              className={`p-4 rounded-2xl flex items-center justify-center transition-all ${
+                timePerDay >= MAX_HOURS
+                  ? "bg-white/5 text-white/20 cursor-not-allowed"
+                  : "bg-white/10 text-white hover:bg-white/20 hover:shadow-[0_0_15px_rgba(232,121,249,0.3)] border border-white/10"
+              }`}
+            >
+              <Plus size={20} />
+            </motion.button>
           </div>
         </div>
 
