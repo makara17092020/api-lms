@@ -26,6 +26,7 @@ model User {
   role        Role         @default(STUDENT)
   image       String?      
   refreshToken String?
+  answers Answer[]
   
   // Relations
   classes     Class[]      @relation("TeacherClasses")
@@ -46,6 +47,7 @@ model Class {
   
   enrollments Enrollment[]
   exams       Exam[]
+  questions Question[]
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -78,12 +80,17 @@ model StudyPlan {
 
 // 6. Daily Tasks
 model Task {
-  id               String    @id @default(cuid())
+  id              String    @id @default(cuid())
   studyPlanId      String
   studyPlan        StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
   taskDescription  String
   dayNumber        Int
   isCompleted      Boolean   @default(false)
+
+  // New Fields for Questions & Student Answers
+  quizQuestion     String    @default("Explain the core principle behind this task in your own words.")
+  studentAnswer    String?   @db.Text // Use @db.Text so it can hold large essays/answers
+  completedAt      DateTime?
 
   createdAt        DateTime  @default(now())
 }
@@ -110,4 +117,30 @@ model Result {
   score      Float
 
   createdAt  DateTime @default(now())
+}
+
+// 9. Question Entity
+model Question {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  classId     String
+  createdAt   DateTime @default(now())
+
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  answers     Answer[]
+}
+
+// 10. Answer Entity
+model Answer {
+  id          String   @id @default(uuid())
+  studentId   String
+  questionId  String
+  answerText  String
+  createdAt   DateTime @default(now())
+
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, questionId])
 }
