@@ -150,12 +150,18 @@ export class ClassService {
 
   /**
    * 10. Get ALL classes (Super Admin view)
+   * FIXED: Now includes enrollments so your ClassCard dropdown sees student data!
    */
   static async getAllClasses() {
     return prisma.class.findMany({
       include: {
         teacher: { select: { id: true, name: true, email: true } },
         _count: { select: { enrollments: true } },
+        enrollments: {
+          include: {
+            student: { select: { id: true, name: true, email: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

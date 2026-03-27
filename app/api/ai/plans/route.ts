@@ -22,16 +22,26 @@ async function getAuth() {
 
 export async function GET() {
   const auth = await getAuth();
-  if (!auth || auth.role !== "STUDENT") {
+
+  // 🔓 1. Allow both Students AND Super Admins
+  if (!auth || (auth.role !== "STUDENT" && auth.role !== "SUPER_ADMIN")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    // 🔍 2. If it's a student, filter by their ID. If it's an admin, find all plans!
+    const whereCondition =
+      auth.role === "STUDENT" ? { studentId: auth.id } : {};
+
     const plans = await prisma.studyPlan.findMany({
-      where: { studentId: auth.id },
+      where: whereCondition,
       include: {
         tasks: {
           orderBy: { dayNumber: "asc" },
+        },
+        // If you want to see who made it on the admin panel:
+        student: {
+          select: { name: true, email: true },
         },
       },
       orderBy: { createdAt: "desc" },
