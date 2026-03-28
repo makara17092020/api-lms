@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose"; // Next.js 15+ compatible jwt verification
 import { cookies } from "next/headers";
-import { ClassService } from "@/app/services/class.servide"; // Keep your filename typo if real!
+import { ClassService } from "@/app/services/class.servide"; // Keeping your typo!
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -60,16 +60,17 @@ export async function GET(req: Request) {
   const type = url.searchParams.get("type");
 
   try {
-    // If Admin asks for 'teacher' type, load ALL classes with joined student data
-    if (type === "teacher" && auth.role === "SUPER_ADMIN") {
-      const classes = await ClassService.getAllClasses();
-      return NextResponse.json(classes);
-    }
+    // ✅ NEW GROUPED LOGIC: Pulls classes if you are looking for 'teacher' data!
+    if (type === "teacher") {
+      if (auth.role === "SUPER_ADMIN") {
+        const classes = await ClassService.getAllClasses();
+        return NextResponse.json(classes);
+      }
 
-    // If a regular Teacher asks, load their classes (and their nested students)
-    if (type === "teacher" && auth.role === "TEACHER") {
-      const classes = await ClassService.getClassesByTeacher(auth.id);
-      return NextResponse.json(classes);
+      if (auth.role === "TEACHER") {
+        const classes = await ClassService.getClassesByTeacher(auth.id);
+        return NextResponse.json(classes);
+      }
     }
 
     if (type === "student" && auth.role === "STUDENT") {

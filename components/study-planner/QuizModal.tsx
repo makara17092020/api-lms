@@ -142,7 +142,7 @@ export default function QuizModal({
                   whileTap={!loading && answer.trim() ? { scale: 0.98 } : {}}
                   onClick={handleSubmitQuiz}
                   disabled={loading || !answer.trim()}
-                  className="w-full h-14 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold rounded-3xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                  className="w-full h-14 bg-linear-to-r from-violet-500 to-fuchsia-500 text-white font-semibold rounded-3xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   {loading ? (
                     <>
