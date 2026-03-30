@@ -1,49 +1,49 @@
+// app/components/layout/Topbar.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { LogOut, Bell, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import LogoutModal from "@/components/users/LogoutModal"; // 👈 Import new modal
+import LogoutModal from "@/components/users/LogoutModal";
 
-export default function Topbar() {
+interface UserProfile {
+  name: string;
+  role: string;
+  image: string | null;
+}
+
+export default function Topbar({ title = "Dashboard" }: { title?: string }) {
   const router = useRouter();
-
-  const [admin, setAdmin] = useState<{
-    name: string;
-    role: string;
-    image: string | null;
-  } | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // 🚪 Popup and Action states
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
+  // Fetch profile using your custom /api/auth/me
   useEffect(() => {
-    const fetchAdminProfile = async () => {
+    const fetchProfile = async () => {
       try {
         const res = await fetch("/api/auth/me");
         if (!res.ok) throw new Error("Unauthorized");
 
         const data = await res.json();
-        setAdmin({
-          name: data.name || "Chantha Makara",
-          role: data.role || "Super Admin",
+        setProfile({
+          name: data.name || "User",
+          role: data.role || "Teacher",
           image: data.image || null,
         });
       } catch (error) {
-        console.error("Failed to load topbar admin profile:", error);
+        console.error("Failed to load profile in Topbar:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAdminProfile();
-  }, [router]);
+    fetchProfile();
+  }, []);
 
   const handleConfirmLogout = async () => {
     setLogoutLoading(true);
-
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
@@ -58,77 +58,75 @@ export default function Topbar() {
     }
   };
 
-  const getInitials = (name: string) => name.charAt(0).toUpperCase();
+  const getInitials = (name: string) => name?.charAt(0)?.toUpperCase() || "U";
 
   return (
     <>
-      <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-400">Workspace /</span>
-          <span className="text-sm font-semibold text-gray-900">Dashboard</span>
+      <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 lg:px-10 sticky top-0 z-50 shadow-sm">
+        {/* Left Side - Title */}
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+            {title}
+          </h1>
         </div>
 
+        {/* Right Side */}
         <div className="flex items-center gap-4">
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
-            <Bell size={18} />
+          {/* Notification Button */}
+          <button className="p-2.5 text-gray-400 hover:text-[#7C3AED] hover:bg-purple-50 rounded-2xl transition-all">
+            <Bell size={20} />
           </button>
 
           <div className="h-6 w-px bg-gray-200" />
 
+          {/* Profile Section */}
           <div className="flex items-center gap-3">
             {loading ? (
               <div className="h-9 w-9 flex items-center justify-center">
-                <Loader2 size={18} className="animate-spin text-gray-400" />
+                <Loader2 size={20} className="animate-spin text-gray-400" />
               </div>
             ) : (
-              <div className="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden border border-gray-200">
-                {admin?.image ? (
-                  <img
-                    src={admin.image}
-                    alt={admin.name}
-                    className="object-cover h-full w-full"
-                  />
-                ) : (
-                  getInitials(admin?.name || "C")
-                )}
-              </div>
-            )}
-
-            <div className="hidden md:block">
-              {loading ? (
-                <div className="space-y-1">
-                  <div className="h-3 w-24 bg-gray-200 animate-pulse rounded" />
-                  <div className="h-2 w-16 bg-gray-100 animate-pulse rounded" />
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div className="w-9 h-9 rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gradient-to-br from-[#7C3AED] to-[#8B5CF6] flex items-center justify-center text-white font-bold text-lg">
+                  {profile?.image ? (
+                    <img
+                      src={profile.image}
+                      alt={profile.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getInitials(profile?.name || "")
+                  )}
                 </div>
-              ) : (
-                <>
+
+                {/* Name & Role */}
+                <div className="hidden md:block">
                   <p className="text-sm font-semibold text-gray-900">
-                    {admin?.name}
+                    {profile?.name}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
-                    {admin?.role?.toLowerCase().replace("_", " ")}
+                    {profile?.role?.toLowerCase().replace("_", " ") || "Teacher"}
                   </p>
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="h-6 w-px bg-gray-200" />
 
+          {/* Logout Button */}
           <button
-            onClick={() => setIsLogoutOpen(true)} // 👈 Hooks into state instead of confirm()
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-all active:scale-95 group"
+            onClick={() => setIsLogoutOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-2xl transition-all active:scale-95"
           >
-            <LogOut
-              size={18}
-              className="text-red-500 group-hover:text-red-600 transition-colors"
-            />
+            <LogOut size={18} />
             <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </header>
 
-      {/* Modern Pop Up Overlay Mounted Portal */}
+      {/* Logout Modal */}
       <LogoutModal
         isOpen={isLogoutOpen}
         onClose={() => setIsLogoutOpen(false)}
