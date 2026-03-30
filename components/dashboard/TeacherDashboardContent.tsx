@@ -1,14 +1,80 @@
 // app/components/dashboard/TeacherDashboardContent.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import TeacherStatsCards from "./TeacherStatsCards";
 import TeacherClassesView from "./TeacherClassesView";
 
+type ClassStudent = {
+  id: string;
+  studyPlans?: Array<{ tasks?: Array<{ completed?: boolean }> }>;
+};
+
+type ClassEnrollment = {
+  student?: ClassStudent;
+};
+
+type ClassData = {
+  enrollments?: ClassEnrollment[];
+};
+
 export default function TeacherDashboardContent() {
   const [activeTab, setActiveTab] = useState<"classes" | "students" | "progress" | "exams">("classes");
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [activeClasses, setActiveClasses] = useState(0);
+  const [avgCompletion, setAvgCompletion] = useState("N/A");
+  const [activeExams, setActiveExams] = useState(0);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/classes?type=teacher");
+        if (!response.ok) {
+          console.error("Failed to fetch teacher classes", await response.text());
+          return;
+        }
+
+        const classes = (await response.json()) as ClassData[];
+
+        if (!Array.isArray(classes)) {
+          console.error("Unexpected classes response", classes);
+          return;
+        }
+
+        setActiveClasses(classes.length);
+
+        const students = new Set<string>();
+        let completedTasks = 0;
+        let totalTasks = 0;
+
+        classes.forEach((cls) => {
+          const enrollments = cls.enrollments || [];
+          enrollments.forEach((en) => {
+            if (en.student?.id) {
+              students.add(en.student.id);
+            }
+            const studyPlans = en.student?.studyPlans || [];
+            studyPlans.forEach((plan) => {
+              (plan.tasks || []).forEach((task) => {
+                totalTasks += 1;
+                if (task.completed) completedTasks += 1;
+              });
+            });
+          });
+        });
+
+        setTotalStudents(students.size);
+        setAvgCompletion(totalTasks > 0 ? `${Math.round((completedTasks / totalTasks) * 100)}%` : "N/A");
+        setActiveExams(0); // no exam concrete endpoint yet
+      } catch (err) {
+        console.error("Teacher stats fetch error", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
@@ -34,7 +100,12 @@ export default function TeacherDashboardContent() {
             ))}
           </div>
 
-          <TeacherStatsCards />
+          <TeacherStatsCards
+            totalStudents={totalStudents}
+            activeClasses={activeClasses}
+            avgCompletion={avgCompletion}
+            activeExams={activeExams}
+          />
 
           <div className="mt-2">
             {activeTab === "classes" && <TeacherClassesView />}

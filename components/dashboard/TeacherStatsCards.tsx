@@ -1,14 +1,26 @@
 // app/components/dashboard/TeacherStatsCards.tsx
 import { Users, BookOpen, TrendingUp, FileCheck } from "lucide-react";
 
-const stats = [
-  { label: "Total Students", value: "245", icon: Users, color: "bg-blue-500" },
-  { label: "Active Classes", value: "12", icon: BookOpen, color: "bg-purple-500" },
-  { label: "Avg. Completion", value: "78%", icon: TrendingUp, color: "bg-pink-500" },
-  { label: "Active Exams", value: "34", icon: FileCheck, color: "bg-green-500" },
-];
+type TeacherStatsCardsProps = {
+  totalStudents: number;
+  activeClasses: number;
+  avgCompletion: string;
+  activeExams: number;
+};
 
-export default function TeacherStatsCards() {
+export default function TeacherStatsCards({
+  totalStudents,
+  activeClasses,
+  avgCompletion,
+  activeExams,
+}: TeacherStatsCardsProps) {
+  const stats = [
+    { label: "Total Students", value: totalStudents.toString(), icon: Users, color: "bg-blue-500" },
+    { label: "Active Classes", value: activeClasses.toString(), icon: BookOpen, color: "bg-purple-500" },
+    { label: "Avg. Completion", value: avgCompletion, icon: TrendingUp, color: "bg-pink-500" },
+    { label: "Active Exams", value: activeExams.toString(), icon: FileCheck, color: "bg-green-500" },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, i) => (
