@@ -8,7 +8,7 @@ import { Teacher } from "@/app/(dashboard)/admin/classes/page";
 interface CreateClassModalProps {
   teachers: Teacher[];
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
 }
 
 export default function CreateClassModal({

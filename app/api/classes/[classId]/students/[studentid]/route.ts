@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ classId: string; studentid: string }> }, // 👈 1. Lowercase 'studentid'
-) {
+) {        
   try {
     const resolvedParams = await params;
 

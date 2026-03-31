@@ -1,50 +1,39 @@
+// app/components/classes/AddStudentModal.tsx
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { X, Loader2, AlertCircle } from "lucide-react";
-import { ClassModel, Student } from "@/app/(dashboard)/admin/classes/page";
+import { X, Loader2 } from "lucide-react";
 
 interface AddStudentModalProps {
-  cls: ClassModel;
-  students: Student[];
+  cls: any; // ClassModel
+  students: any[]; // Student[]
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
 }
 
-export default function AddStudentModal({
-  cls,
-  students,
-  onClose,
-  onSuccess,
-}: AddStudentModalProps) {
-  const [studentId, setStudentId] = useState("");
+export default function AddStudentModal({ cls, students, onClose, onSuccess }: AddStudentModalProps) {
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId) return;
-
     setLoading(true);
     setError("");
 
     try {
-      // PATH MUST MATCH: app/api/classes/[classId]/students/route.ts
-      const res = await fetch(`/api/classes/${cls.id}/students`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Enrollment failed");
+      for (const studentId of selectedStudents) {
+        const res = await fetch(`/api/classes/${cls.id}/students`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentId }),
+        });
+        if (!res.ok) throw new Error("Failed to enroll student");
       }
 
       onSuccess();
       onClose();
+      setSelectedStudents([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -53,78 +42,47 @@ export default function AddStudentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-      />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="relative bg-white w-full max-w-md p-6 rounded-2xl shadow-xl z-10"
-      >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
+      <div className="bg-white rounded-3xl w-full max-w-md p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Enroll Student</h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400"
-          >
-            <X size={20} />
-          </button>
+          <h2 className="text-2xl font-semibold">Add Students to {cls.className}</h2>
+          <button onClick={onClose}><X size={24} /></button>
         </div>
 
-        <div className="mb-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-          <p className="text-[10px] uppercase tracking-wider font-bold text-indigo-600">
-            Enrolling to:
-          </p>
-          <p className="text-sm font-semibold text-indigo-900">
-            {cls.className}
-          </p>
-        </div>
+        {error && <p className="text-red-600 mb-4">{error}</p>}
 
-        {error && (
-          <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg mb-4 flex items-center gap-2 border border-red-100">
-            <AlertCircle size={16} /> {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-xs font-semibold text-gray-700 block mb-1.5">
-              Select Student
-            </label>
-            <select
-              required
-              className="w-full text-sm px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer"
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-            >
-              <option value="">Choose a student...</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.email})
-                </option>
+            <label className="text-sm font-medium">Select Students</label>
+            <div className="max-h-40 overflow-y-auto border rounded p-2">
+              {students.map((student) => (
+                <label key={student.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedStudents.includes(student.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedStudents([...selectedStudents, student.id]);
+                      } else {
+                        setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                      }
+                    }}
+                  />
+                  <span>{student.name}</span>
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gray-900 hover:bg-black text-white font-medium text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+            disabled={loading || selectedStudents.length === 0}
+            className="w-full bg-indigo-600 text-white py-2 rounded-lg disabled:opacity-50"
           >
-            {loading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              "Enroll Student"
-            )}
+            {loading ? <Loader2 className="animate-spin mx-auto" /> : "Add Students"}
           </button>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 }

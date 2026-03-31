@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { signIn } from "next-auth/react";
 import { motion, AnimatePresence, cubicBezier } from "framer-motion";
 import {
   User,
@@ -78,6 +79,15 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    await signIn("google", {
+      callbackUrl: `${window.location.origin}/`,
+    });
+    setLoading(false);
   };
 
   return (
@@ -260,6 +270,7 @@ export default function RegisterPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 type="button"
+                onClick={handleGoogleSignIn}
                 className="w-full h-14 flex items-center justify-center rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
               >
                 <FcGoogle size={24} />
