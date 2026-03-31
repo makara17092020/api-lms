@@ -23,27 +23,28 @@ export default function Sidebar() {
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
-  // 📂 Determine if the current route is for Admin or Student
+  // 📂 Determine the base route based on current path
   const isAdmin = pathname.startsWith("/admin");
+  const baseRoute = pathname.startsWith("/admin") ? "/admin" : pathname.startsWith("/teacher") ? "/teacher" : "/student";
 
   // Dynamic menu items routing
   const menuItems = [
     {
       name: "Dashboard",
-      href: isAdmin ? "/admin" : "/student",
+      href: baseRoute,
       icon: LayoutDashboard,
     },
-    { name: "Users", href: "/admin/users", icon: Users, hide: !isAdmin }, // Hide users panel if student
+    { name: "Users", href: "/admin/users", icon: Users, hide: !isAdmin }, // Hide users panel if not admin
     {
       name: "Classes",
-      href: isAdmin ? "/admin/classes" : "/student/classes",
+      href: isAdmin ? "/admin/classes" : `${baseRoute}/classes`,
       icon: BookOpen,
     },
     {
       name: "Study Plans",
-      href: isAdmin ? "/admin/study-plans" : "/study-plans",
+      href: isAdmin ? "/admin/study-plans" : `${baseRoute}/study-plans`,
       icon: BrainCircuit,
-    }, // 👈 Maps to student or admin panel!
+    }, // 👈 Maps to admin or other panel!
   ];
 
   const handleUIRefresh = () => {

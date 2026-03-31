@@ -1,57 +1,41 @@
-// app/components/classes/CreateStudentModal.tsx
 "use client";
 
 import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { X, Loader2, AlertCircle } from "lucide-react";
+import { Teacher } from "@/app/(dashboard)/admin/classes/page";
 
-interface CreateStudentModalProps {
-  isOpen: boolean;
+interface CreateClassModalProps {
+  teachers: Teacher[];
   onClose: () => void;
-  classId: string;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
 }
 
-export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess }: CreateStudentModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+export default function CreateClassModal({
+  teachers,
+  onClose,
+  onSuccess,
+}: CreateClassModalProps) {
+  const [className, setClassName] = useState("");
+  const [teacherId, setTeacherId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setLoading(true);
 
     try {
-      // 1. Create new student
-      const createRes = await fetch("/api/users", {
+      const res = await fetch("/api/classes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          role: "STUDENT",
-        }),
+        body: JSON.stringify({ className, teacherId }),
       });
-
-      const newStudent = await createRes.json();
-
-      if (!createRes.ok) throw new Error(newStudent.error || "Failed to create student");
-
-      // 2. Enroll the new student to the class
-      const enrollRes = await fetch(`/api/classes/${classId}/students`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: newStudent.id }),
-      });
-
-      if (!enrollRes.ok) throw new Error("Student created but failed to enroll");
-
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Creation failed");
       onSuccess();
       onClose();
-      setFormData({ name: "", email: "", password: "" });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -59,61 +43,87 @@ export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
-      <div className="bg-white rounded-3xl w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="relative bg-white w-full max-w-md p-6 rounded-2xl shadow-xl z-10"
+      >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Create New Student</h2>
-          <button onClick={onClose}><X size={24} /></button>
+          <h2 className="text-xl font-bold text-gray-900">
+            New Class Workspace
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {error && <p className="text-red-600 mb-4">{error}</p>}
+        {error && (
+          <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg mb-4 flex items-center gap-2 border border-red-100">
+            <AlertCircle size={16} /> {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Full Name</label>
+            <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+              Class Name
+            </label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border rounded-2xl"
               required
+              className="w-full text-sm px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 focus:bg-white transition-all"
+              placeholder="e.g. Modern PostgreSQL Design"
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 border rounded-2xl"
+            <label className="text-xs font-semibold text-gray-700 block mb-1.5">
+              Instructor Assign
+            </label>
+            <select
               required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Password</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 border rounded-2xl"
-              required
-            />
+              className="w-full text-sm px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-indigo-500 focus:bg-white transition-all cursor-pointer"
+              value={teacherId}
+              onChange={(e) => setTeacherId(e.target.value)}
+            >
+              <option value="">Select an instructor...</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] text-white rounded-2xl font-semibold disabled:opacity-70"
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
           >
-            {loading ? "Creating Student..." : "Create & Enroll Student"}
+            {loading ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              "Launch Class"
+            )}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
