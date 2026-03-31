@@ -1,22 +1,18 @@
-// app/components/classes/CreateStudentModal.tsx
+// app/components/classes/AddStudentModal.tsx
 "use client";
 
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 
-interface CreateStudentModalProps {
-  isOpen: boolean;
+interface AddStudentModalProps {
+  cls: any; // ClassModel
+  students: any[]; // Student[]
   onClose: () => void;
-  classId: string;
-  onSuccess: () => void;
+  onSuccess: () => void | Promise<void>;
 }
 
-export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess }: CreateStudentModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+export default function AddStudentModal({ cls, students, onClose, onSuccess }: AddStudentModalProps) {
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,32 +22,18 @@ export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess
     setError("");
 
     try {
-      // 1. Create new student
-      const createRes = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          role: "STUDENT",
-        }),
-      });
-
-      const newStudent = await createRes.json();
-
-      if (!createRes.ok) throw new Error(newStudent.error || "Failed to create student");
-
-      // 2. Enroll the new student to the class
-      const enrollRes = await fetch(`/api/classes/${classId}/students`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: newStudent.id }),
-      });
-
-      if (!enrollRes.ok) throw new Error("Student created but failed to enroll");
+      for (const studentId of selectedStudents) {
+        const res = await fetch(`/api/classes/${cls.id}/students`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ studentId }),
+        });
+        if (!res.ok) throw new Error("Failed to enroll student");
+      }
 
       onSuccess();
       onClose();
-      setFormData({ name: "", email: "", password: "" });
+      setSelectedStudents([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -59,13 +41,11 @@ export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
       <div className="bg-white rounded-3xl w-full max-w-md p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Create New Student</h2>
+          <h2 className="text-2xl font-semibold">Add Students to {cls.className}</h2>
           <button onClick={onClose}><X size={24} /></button>
         </div>
 
@@ -73,44 +53,33 @@ export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-sm font-medium">Full Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border rounded-2xl"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 border rounded-2xl"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Password</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 border rounded-2xl"
-              required
-            />
+            <label className="text-sm font-medium">Select Students</label>
+            <div className="max-h-40 overflow-y-auto border rounded p-2">
+              {students.map((student) => (
+                <label key={student.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedStudents.includes(student.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedStudents([...selectedStudents, student.id]);
+                      } else {
+                        setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                      }
+                    }}
+                  />
+                  <span>{student.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] text-white rounded-2xl font-semibold disabled:opacity-70"
+            disabled={loading || selectedStudents.length === 0}
+            className="w-full bg-indigo-600 text-white py-2 rounded-lg disabled:opacity-50"
           >
-            {loading ? "Creating Student..." : "Create & Enroll Student"}
+            {loading ? <Loader2 className="animate-spin mx-auto" /> : "Add Students"}
           </button>
         </form>
       </div>
