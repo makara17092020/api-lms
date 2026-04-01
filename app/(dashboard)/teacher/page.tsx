@@ -11,7 +11,7 @@ export default async function TeacherDashboard() {
   }
 
   if (session.user.role !== "TEACHER" && session.user.role !== "SUPER_ADMIN") {
-    redirect("/dashboard");
+    redirect("/dashboard"); 
   }
 
   return <TeacherDashboardContent/>;
