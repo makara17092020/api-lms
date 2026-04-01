@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ classId: string }> },
 ) {
   try {
     const session = await getServerSession();
@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const classId = params.id;
+    const { classId } = await params;
 
     const classData = await prisma.class.findUnique({
       where: { id: classId },

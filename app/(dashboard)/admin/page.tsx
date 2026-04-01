@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import UserTrendsChart from "@/components/dashboard/UserTrendsChart";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton"; // 👈 Pull in skeletons
 
+
 interface DashboardMetrics {
   totalUsers: number;
   students: number;

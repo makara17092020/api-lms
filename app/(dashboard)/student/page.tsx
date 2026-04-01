@@ -128,7 +128,10 @@ export default function StudentDashboardPage() {
               studyPlanCount={studyPlanCount}
             />
 
-            <ActiveClassesSection classes={classes} loading={false} />
+            <ActiveClassesSection
+              classes={classes}
+              loading={false}
+            />
 
             <GeneratePlanForm
               level={level}
