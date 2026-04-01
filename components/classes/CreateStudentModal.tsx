@@ -20,6 +20,8 @@ export default function CreateStudentModal({ isOpen, onClose, classId, onSuccess
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  if (!isOpen) return null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

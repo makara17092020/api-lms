@@ -11,20 +11,21 @@ import {
   ChevronDown,
   X,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { ClassModel } from "@/app/(dashboard)/admin/classes/page";
 
 interface ClassCardProps {
   cls: ClassModel;
   onEdit: () => void;
-  onAddStudent: () => void;
+  onManageStudents: () => void;
   onDelete: () => void;
 }
 
 export default function ClassCard({
   cls,
   onEdit,
-  onAddStudent,
+  onManageStudents,
   onDelete,
 }: ClassCardProps) {
   const [isStudentsExpanded, setIsStudentsExpanded] = useState(false);
@@ -191,15 +192,17 @@ export default function ClassCard({
             </motion.div>
           </button>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onAddStudent}
-            className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shadow-sm"
-          >
-            <UserPlus size={14} />
-            Add Student
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onManageStudents}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
+            >
+              <UserPlus size={16} />
+              Manage Students
+            </motion.button>
+          </div>
         </div>
       </div>
     </motion.div>
