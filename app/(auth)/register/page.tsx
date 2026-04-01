@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertCircle,
   GraduationCap,
+  ArrowLeft,
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 
@@ -55,23 +56,18 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      // FIX 1: Pointed to your actual API route path
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // FIX 2: Your API returns { error: "message" }, not { message: "message" }
         throw new Error(data.error || "Registration failed");
       }
 
-      // Success! Cookies are set by the server via setAuthCookies
       router.push("/dashboard/student");
       router.refresh();
     } catch (err: any) {
@@ -141,7 +137,6 @@ export default function RegisterPage() {
               )}
             </AnimatePresence>
 
-            {/* Registration Form */}
             <form onSubmit={handleSubmit}>
               <motion.div
                 variants={staggerContainer}
@@ -149,7 +144,6 @@ export default function RegisterPage() {
                 animate="visible"
                 className="space-y-6"
               >
-                {/* Full Name */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="name"
@@ -172,7 +166,6 @@ export default function RegisterPage() {
                   </label>
                 </motion.div>
 
-                {/* Email */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="email"
@@ -195,7 +188,6 @@ export default function RegisterPage() {
                   </label>
                 </motion.div>
 
-                {/* Password */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="password"
@@ -225,7 +217,6 @@ export default function RegisterPage() {
                   </button>
                 </motion.div>
 
-                {/* Create Account Button */}
                 <motion.button
                   variants={itemVariants}
                   type="submit"
@@ -257,7 +248,7 @@ export default function RegisterPage() {
             >
               <div className="flex items-center gap-4 my-6">
                 <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-400 font-medium tracking-widest">
+                <span className="text-xs text-gray-400 font-medium tracking-widest text-center">
                   OR CONTINUE WITH
                 </span>
                 <div className="h-px flex-1 bg-gray-200" />
@@ -291,6 +282,25 @@ export default function RegisterPage() {
 
         {/* ILLUSTRATION SIDE */}
         <div className="hidden lg:flex flex-1 lg:w-7/12 relative overflow-hidden bg-linear-to-br from-indigo-950 via-violet-950 to-indigo-950">
+          {/* --- UPDATED BACK TO HOME BUTTON --- */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5, duration: 0.6, ease: EASE }}
+            className="absolute top-8 left-8 z-20"
+          >
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-5 py-2.5 bg-black/20 hover:bg-black/30 backdrop-blur-xl text-white font-semibold text-xs rounded-full border border-white/10 shadow-lg transition-all active:scale-95 group"
+            >
+              <ArrowLeft
+                size={14}
+                className="text-white/90 group-hover:text-white group-hover:-translate-x-0.5 transition-transform"
+              />
+              Back to Home
+            </Link>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -305,7 +315,9 @@ export default function RegisterPage() {
               priority
             />
           </motion.div>
+
           <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
+
           <div className="absolute bottom-16 left-16 max-w-md text-white">
             <h2 className="text-5xl font-semibold tracking-tighter leading-none">
               Start your <span className="text-violet-300">journey</span>

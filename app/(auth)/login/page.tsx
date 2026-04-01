@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
-import { motion, AnimatePresence } from "framer-motion";
-import { easeInOut } from "framer-motion";
+import { motion, AnimatePresence, cubicBezier } from "framer-motion";
 import {
   Mail,
   Lock,
@@ -19,24 +18,26 @@ import {
 } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 
+// ===================== UNIFIED ANIMATION CONFIG =====================
+const EASE = cubicBezier(0.23, 1, 0.32, 1);
+
 const containerVariants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeInOut } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
 };
+
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.96 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.6, ease: easeInOut },
-  },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: EASE } },
 };
+
 const staggerContainer = {
   visible: { transition: { staggerChildren: 0.1, delayChildren: 0.3 } },
 };
+
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeInOut } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
 };
 
 export default function LoginPage() {
@@ -51,33 +52,23 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Invalid email or password");
-      }
+      if (!response.ok) throw new Error(data.error || "Invalid credentials");
 
-      if (data.user?.role === "SUPER_ADMIN") {
-        router.push("/admin");
-      } else if (data.user?.role === "TEACHER") {
-        router.push("/teacher");
-      } else {
-        router.push("/student");
-      }
+      if (data.user?.role === "SUPER_ADMIN") router.push("/admin");
+      else if (data.user?.role === "TEACHER") router.push("/teacher");
+      else router.push("/student");
 
       router.refresh();
     } catch (err: any) {
-      setError(
-        err.message || "An unexpected error occurred. Please try again.",
-      );
+      setError(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -86,29 +77,19 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
-    await signIn("google", {
-      callbackUrl: `${window.location.origin}/`,
-    });
+    await signIn("google", { callbackUrl: "/" });
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-slate-100 flex items-center justify-center p-4 md:p-8 relative">
-      {/* --- ADDED: Floating Back to Home Button --- */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="absolute top-6 left-6 z-20"
-      ></motion.div>
-
+    <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-slate-100 flex items-center justify-center p-4 md:p-8">
       <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
         className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row-reverse overflow-hidden rounded-3xl bg-white shadow-2xl border border-white/60"
       >
-        {/* FORM SIDE */}
+        {/* FORM SIDE (Matches Register Page Layout) */}
         <motion.div
           variants={cardVariants}
           className="flex-1 lg:w-5/12 bg-white/95 backdrop-blur-3xl p-10 lg:p-16 flex items-center justify-center border-l border-white/40"
@@ -119,7 +100,7 @@ export default function LoginPage() {
               <motion.div
                 initial={{ scale: 0.9, rotate: -8, opacity: 0 }}
                 animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
+                transition={{ duration: 0.6, ease: EASE }}
                 className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-500/30"
               >
                 <GraduationCap size={32} />
@@ -127,7 +108,7 @@ export default function LoginPage() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, ease: "easeInOut" }}
+                transition={{ delay: 0.2, ease: EASE }}
               >
                 <h1 className="text-4xl font-semibold tracking-tighter text-gray-950">
                   Welcome back
@@ -158,7 +139,7 @@ export default function LoginPage() {
                 animate="visible"
                 className="space-y-6"
               >
-                {/* Email */}
+                {/* Email Input - Peer Style */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="email"
@@ -181,7 +162,7 @@ export default function LoginPage() {
                   </label>
                 </motion.div>
 
-                {/* Password */}
+                {/* Password Input - Peer Style */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="password"
@@ -234,7 +215,7 @@ export default function LoginPage() {
               </motion.div>
             </form>
 
-            {/* SINGLE GOOGLE LOGIN */}
+            {/* Google Section */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -243,7 +224,7 @@ export default function LoginPage() {
             >
               <div className="flex items-center gap-4 my-6">
                 <div className="h-px flex-1 bg-gray-200" />
-                <span className="text-xs text-gray-400 font-medium tracking-widest">
+                <span className="text-xs text-gray-400 font-medium tracking-widest text-center">
                   OR CONTINUE WITH
                 </span>
                 <div className="h-px flex-1 bg-gray-200" />
@@ -252,7 +233,7 @@ export default function LoginPage() {
               <motion.button
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, ease: "easeInOut" }}
+                transition={{ delay: 1, ease: EASE }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 type="button"
@@ -275,22 +256,22 @@ export default function LoginPage() {
           </div>
         </motion.div>
 
-        {/* ILLUSTRATION SIDE */}
+        {/* ILLUSTRATION SIDE (Matches Register Page Styling) */}
         <div className="hidden lg:flex flex-1 lg:w-7/12 relative overflow-hidden bg-linear-to-br from-indigo-950 via-violet-950 to-indigo-950">
-          {/* glassmorphism Back to Home Button placed inside the image container */}
+          {/* Back to Home Button (Pill Style) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, duration: 0.6, ease: "easeInOut" }}
-            className="absolute top-6 left-6 z-20"
+            transition={{ delay: 0.5, duration: 0.6, ease: EASE }}
+            className="absolute top-8 left-8 z-20"
           >
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-medium text-sm rounded-xl shadow-sm border border-white/20 transition-all active:scale-95 group"
+              className="flex items-center gap-2 px-5 py-2.5 bg-black/20 hover:bg-black/30 backdrop-blur-xl text-white font-semibold text-xs rounded-full border border-white/10 shadow-lg transition-all active:scale-95 group"
             >
               <ArrowLeft
-                size={16}
-                className="text-white/80 group-hover:text-white group-hover:-translate-x-0.5 transition-transform"
+                size={14}
+                className="text-white/90 group-hover:text-white group-hover:-translate-x-0.5 transition-transform"
               />
               Back to Home
             </Link>
@@ -299,7 +280,7 @@ export default function LoginPage() {
           <motion.div
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: "easeInOut" }}
+            transition={{ duration: 1, ease: EASE }}
             className="absolute inset-0"
           >
             <Image
@@ -310,7 +291,9 @@ export default function LoginPage() {
               priority
             />
           </motion.div>
+
           <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
+
           <div className="absolute bottom-16 left-16 max-w-md text-white">
             <h2 className="text-5xl font-semibold tracking-tighter leading-none">
               Unlock your <span className="text-violet-300">potential</span>
