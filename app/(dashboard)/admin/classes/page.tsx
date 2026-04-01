@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ClassCard from "@/components/classes/ClassCard";
 import CreateClassModal from "@/components/classes/CreateClassModal";
 import EditClassModal from "@/components/classes/EditClassModal";
-import AddStudentModal from "@/components/classes/AddStudentModal";
+import StudentManagementModal from "@/components/classes/StudentManagementModal";
 import LoadingSkeleton from "@/components/classes/LoadingSkeleton";
 import EmptyState from "@/components/classes/EmptyState";
 
@@ -56,7 +56,7 @@ export default function AdminClassesPage() {
   // Modals States
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassModel | null>(null);
-  const [enrollingClass, setEnrollingClass] = useState<ClassModel | null>(null);
+  const [managingClass, setManagingClass] = useState<ClassModel | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -158,7 +158,7 @@ export default function AdminClassesPage() {
                 key={cls.id}
                 cls={cls}
                 onEdit={() => setEditingClass(cls)}
-                onAddStudent={() => setEnrollingClass(cls)}
+                onManageStudents={() => setManagingClass(cls)}
                 onDelete={fetchInitialData}
               />
             ))}
@@ -187,12 +187,12 @@ export default function AdminClassesPage() {
           />
         )}
 
-        {/* ADD STUDENT MODAL */}
-        {enrollingClass && (
-          <AddStudentModal
-            cls={enrollingClass}
+        {/* STUDENT MANAGEMENT MODAL */}
+        {managingClass && (
+          <StudentManagementModal
+            cls={managingClass}
             students={students}
-            onClose={() => setEnrollingClass(null)}
+            onClose={() => setManagingClass(null)}
             onSuccess={fetchInitialData}
           />
         )}
