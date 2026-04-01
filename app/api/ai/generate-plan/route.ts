@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const ai = new GoogleGenAI({});
+// 1. Initialize AI Client
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -13,16 +14,8 @@ async function getAuth() {
 
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
-
-    if (!secretKey) {
-      console.error(
-        "[AUTH_ERROR]: ACCESS_TOKEN_SECRET is missing in environment variables.",
-      );
-      return null;
-    }
-
+    if (!secretKey) return null;
     const secret = new TextEncoder().encode(secretKey);
-
     const { payload } = await jwtVerify(token, secret);
     return payload as { id: string; role: string };
   } catch {
@@ -32,6 +25,7 @@ async function getAuth() {
 
 export async function POST(req: Request) {
   const auth = await getAuth();
+
   if (!auth || auth.role !== "STUDENT") {
     return NextResponse.json(
       { error: "Forbidden. Student access only." },
@@ -49,83 +43,78 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Check for Duplicate StudyPlan for this student
+    // 2. Check for Duplicate to Save Quota
     const existingPlan = await prisma.studyPlan.findFirst({
       where: { studentId: auth.id, topic: topic.trim() },
     });
 
     if (existingPlan) {
       return NextResponse.json(
-        { error: `You already have a study plan spawned for '${topic}'` },
+        { error: `Plan already exists for '${topic}'` },
         { status: 409 },
       );
     }
 
-    // 2. Grab actual enrolled classes to context-bias Gemini's curation
+    // 3. Gather Context
     const enrollments = await prisma.enrollment.findMany({
       where: { studentId: auth.id },
       include: { class: true },
     });
     const classContext = enrollments.map((e) => e.class.className).join(", ");
 
-    // 3. Prompt Engineering + Gemini JSON Schema Schema
-    const prompt = `
-      You are an elite academic AI planner.
-      Generate a study plan for a student who is at a "${level}" level.
-      Target Topic: "${topic}".
-      Student's Available Time per Day: ${availableTimePerDay} hours.
-      The student is also concurrently enrolled in the following classes: [${classContext}]. Connect the study plan loosely to these contexts if applicable.
-
-      Break down the tasks into daily intervals. For EACH day, generate exactly 3 highly focused action items (bullet points) that fit the student's available time. 
-      Action items should start with active verbs (e.g., "Review...", "Understand...", "Create...").
-      Generate exactly 7 to 14 days of sequential tasks.
-    `;
-
-    const response = await ai.models.generateContent({
+    // 4. Configure Model (Gemini 2.5 Flash is the 2026 Stable Workhorse)
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            duration: {
-              type: Type.INTEGER,
-              description: "Total duration of the study plan in days.",
-            },
-            tasks: {
-              type: Type.ARRAY,
-              description:
-                "Sequential list of daily tasks to achieve the goal.",
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  dayNumber: { type: Type.INTEGER },
-                  subTasks: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                    description:
-                      "3 highly actionable bullet items for this specific day.",
-                  },
-                },
-                required: ["dayNumber", "subTasks"],
-              },
-            },
-          },
-          required: ["duration", "tasks"],
-        },
+      generationConfig: {
+        responseMimeType: "application/json", // Forces JSON output
       },
     });
 
-    const aiOutput = JSON.parse(response.text || "{}");
+    const prompt = `
+      You are an elite academic AI planner. 
+      Topic: "${topic}". Level: "${level}". Daily Time: ${availableTimePerDay} hours.
+      Student's Classes: [${classContext}].
 
-    // 4. Prisma Transaction: Combine subTasks into standard String using line-breaks
+      Generate a study plan (7-14 days). 
+      Format the response as a valid JSON object.
+      
+      JSON Schema:
+      {
+        "duration": number,
+        "tasks": [
+          { "dayNumber": number, "subTasks": ["string", "string", "string"] }
+        ]
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // 5. Robust JSON Parsing (Bracket-Seek Logic)
+    let aiOutput;
+    try {
+      const firstBracket = text.indexOf("{");
+      const lastBracket = text.lastIndexOf("}");
+
+      if (firstBracket === -1 || lastBracket === -1) {
+        throw new Error("Invalid format");
+      }
+
+      const cleanJson = text.substring(firstBracket, lastBracket + 1);
+      aiOutput = JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error("AI Output Parsing Failed. Raw Text:", text);
+      throw new Error("AI returned invalid JSON format.");
+    }
+
+    // 6. Database Transaction
     const savedPlan = await prisma.$transaction(async (tx) => {
       const plan = await tx.studyPlan.create({
         data: {
           studentId: auth.id,
           topic: topic.trim(),
-          duration: aiOutput.duration || 14,
+          duration: aiOutput.duration || 7,
         },
       });
 
@@ -133,10 +122,7 @@ export async function POST(req: Request) {
         data: aiOutput.tasks.map((t: any) => ({
           studyPlanId: plan.id,
           dayNumber: t.dayNumber,
-          // 💡 Combining bullet points into a multi-line standard string using `\n`!
-          taskDescription: Array.isArray(t.subTasks)
-            ? t.subTasks.map((bullet: string) => `• ${bullet}`).join("\n")
-            : "No agenda defined for this day.",
+          taskDescription: t.subTasks.map((s: string) => `• ${s}`).join("\n"),
           isCompleted: false,
         })),
       });
@@ -150,8 +136,25 @@ export async function POST(req: Request) {
     return NextResponse.json(savedPlan, { status: 201 });
   } catch (error: any) {
     console.error("[GEMINI_STUDY_PLANNER_ERROR]:", error);
+
+    // Handle Quota/Rate Limits (429)
+    if (error.status === 429) {
+      return NextResponse.json(
+        { error: "Daily AI request limit reached. Please try again tomorrow." },
+        { status: 429 },
+      );
+    }
+
+    // Handle Service Unavailable (503)
+    if (error.status === 503) {
+      return NextResponse.json(
+        { error: "AI servers are busy. Please try again in a few minutes." },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to generate AI Study Plan" },
+      { error: error.message || "An unexpected error occurred." },
       { status: 500 },
     );
   }
