@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
-const ai = new GoogleGenAI({});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -14,7 +14,6 @@ async function getAuth() {
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
     if (!secretKey) return null;
-
     const secret = new TextEncoder().encode(secretKey);
     const { payload } = await jwtVerify(token, secret);
     return payload as { id: string; role: string };
@@ -25,64 +24,49 @@ async function getAuth() {
 
 export async function POST(req: Request, { params }: { params: any }) {
   const auth = await getAuth();
-  if (!auth) {
+  if (!auth)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
-  const resolvedParams = await params;
-  const id = resolvedParams.id;
+  const { id } = await params;
   const { answer } = await req.json();
 
   try {
-    // 1. Get the task
-    const task = await prisma.task.findUnique({
-      where: { id },
+    const task = await prisma.task.findUnique({ where: { id } });
+    if (!task)
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
     });
 
-    if (!task) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
-    }
-
-    // 2. Ask Gemini to evaluate if the answer is good enough
     const prompt = `
-      Evaluate if the user understands the daily concept.
-      Task Goal: "${task.taskDescription}"
-      User's Explanation: "${answer}"
+      Evaluate if this explanation satisfies the task goal.
+      Goal: "${task.taskDescription}"
+      User Answer: "${answer}"
 
-      If the answer is relevant and accurate to the task description, pass them. If it's gibberish or unrelated, fail them.
+      Return JSON:
+      { "passed": boolean, "feedback": "string" }
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            passed: { type: Type.BOOLEAN },
-            feedback: { type: Type.STRING },
-          },
-          required: ["passed", "feedback"],
-        },
-      },
-    });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-    const grading = JSON.parse(response.text || "{}");
+    // Robust Extraction
+    const firstBracket = text.indexOf("{");
+    const lastBracket = text.lastIndexOf("}");
+    const grading = JSON.parse(text.substring(firstBracket, lastBracket + 1));
 
     if (!grading.passed) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            grading.feedback ||
-            "Your answer did not satisfy the task criteria. Please try explaining it again.",
+          message: grading.feedback || "Explanation insufficient.",
         },
         { status: 400 },
       );
     }
 
-    // 3. Mark it as completed if passed
     const updatedTask = await prisma.task.update({
       where: { id },
       data: { isCompleted: true },
@@ -95,9 +79,6 @@ export async function POST(req: Request, { params }: { params: any }) {
     });
   } catch (error) {
     console.error("[TASK_COMPLETE_ERROR]:", error);
-    return NextResponse.json(
-      { error: "Failed to evaluate task answer" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Evaluation failed" }, { status: 500 });
   }
 }
