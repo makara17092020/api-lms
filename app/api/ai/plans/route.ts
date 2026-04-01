@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+// app/api/ai/plans/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
@@ -9,10 +10,7 @@ async function getAuth() {
   if (!token) return null;
 
   try {
-    const secretKey = process.env.ACCESS_TOKEN_SECRET;
-    if (!secretKey) return null;
-
-    const secret = new TextEncoder().encode(secretKey);
+    const secret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET!);
     const { payload } = await jwtVerify(token, secret);
     return payload as { id: string; role: string };
   } catch {
@@ -20,29 +18,32 @@ async function getAuth() {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await getAuth();
-
-  // 🔓 1. Allow both Students AND Super Admins
   if (!auth || (auth.role !== "STUDENT" && auth.role !== "SUPER_ADMIN")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    // 🔍 2. If it's a student, filter by their ID. If it's an admin, find all plans!
-    const whereCondition =
-      auth.role === "STUDENT" ? { studentId: auth.id } : {};
+  const { searchParams } = new URL(request.url);
+  const classId = searchParams.get("classId");
 
+  const whereCondition: any =
+    auth.role === "STUDENT" ? { studentId: auth.id } : {};
+  if (classId) whereCondition.classId = classId;
+
+  try {
     const plans = await prisma.studyPlan.findMany({
       where: whereCondition,
       include: {
         tasks: {
           orderBy: { dayNumber: "asc" },
+          select: {
+            id: true,
+            taskDescription: true,
+            isCompleted: true,
+          },
         },
-        // If you want to see who made it on the admin panel:
-        student: {
-          select: { name: true, email: true },
-        },
+        class: { select: { className: true } },
       },
       orderBy: { createdAt: "desc" },
     });

@@ -11,11 +11,12 @@ export interface Plan {
   topic: string;
   duration: number;
   tasks?: Task[];
+  class?: { className: string };
 }
 
 interface PlanCardProps {
   plan: Plan;
-  onDelete: (planId: string) => Promise<void>; // CHANGED: Expects a Promise from parent
+  onDelete: (planId: string) => Promise<void>;
   onRefresh: () => void;
 }
 
@@ -26,14 +27,15 @@ export default function PlanCard({ plan, onDelete, onRefresh }: PlanCardProps) {
     setIsDeleteModalOpen(true);
   };
 
-  // CHANGED: Made async to bridge standard void and promise!
   const handleConfirmDelete = async () => {
     await onDelete(plan.id);
+    setIsDeleteModalOpen(false);
   };
 
   return (
     <>
       <div className="relative p-8 md:p-10 bg-white/50 dark:bg-slate-900/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/30 dark:border-white/10 shadow-xl overflow-hidden">
+        {/* Decorative Background Blur */}
         <div className="absolute top-0 right-0 -z-10 h-64 w-64 bg-linear-to-br from-violet-500/10 to-fuchsia-500/10 blur-3xl rounded-full pointer-events-none" />
 
         <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-10">
@@ -47,10 +49,15 @@ export default function PlanCard({ plan, onDelete, onRefresh }: PlanCardProps) {
               </h2>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-4 py-2 bg-white/80 dark:bg-white/5 backdrop-blur-md rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 border border-white/50 dark:border-white/10 shadow-sm leading-relaxed">
+            <div className="flex flex-wrap items-center gap-3">
+              {plan.class && (
+                <div className="inline-flex items-center px-4 py-2 bg-violet-100/80 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-2xl text-xs font-bold">
+                  {plan.class.className}
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 px-4 py-2 bg-white/80 dark:bg-white/5 backdrop-blur-md rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 border border-white/50 dark:border-white/10 shadow-sm">
                 <Calendar size={14} className="text-violet-500" />
-                Duration: {plan.duration} Days
+                {plan.duration} Day Plan
               </div>
             </div>
           </div>
@@ -59,17 +66,29 @@ export default function PlanCard({ plan, onDelete, onRefresh }: PlanCardProps) {
             onClick={handleDeleteClick}
             whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
-            className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-2xl border border-transparent hover:border-red-200 transition-all active:scale-95"
+            className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-2xl border border-transparent hover:border-red-200 transition-all"
             title="Delete Plan"
           >
             <Trash2 size={20} />
           </motion.button>
         </div>
 
+        {/* The Task Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {plan.tasks?.map((task) => (
-            <TaskCard key={task.id} task={task} onRefresh={onRefresh} />
-          ))}
+          {plan.tasks?.map(
+            (
+              task,
+              index, // 1. Added index here
+            ) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                index={index} // 2. Pass index to the component
+                planId={plan.id}
+                onRefresh={onRefresh}
+              />
+            ),
+          )}
         </div>
       </div>
 
@@ -78,7 +97,7 @@ export default function PlanCard({ plan, onDelete, onRefresh }: PlanCardProps) {
           <DeleteConfirmationModal
             planTopic={plan.topic}
             onClose={() => setIsDeleteModalOpen(false)}
-            onConfirm={handleConfirmDelete} // Types perfectly match now!
+            onConfirm={handleConfirmDelete}
           />
         )}
       </AnimatePresence>

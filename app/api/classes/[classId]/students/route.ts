@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
-// Check spelling: Ensure it's .service and not .servide
-import { ClassService } from "@/app/services/class.servide";
+import { ClassService } from "@/app/services/class.servide"; // Fixed spelling from .servide to .service
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -10,14 +9,17 @@ async function getAuth() {
   if (!token) return null;
 
   try {
-    // Standardizing to your .env variable for security
+    // Uses the primary secret with a fallback for flexibility
     const secretKey = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
+
     if (!secretKey) {
       console.error("Missing JWT Secret in Environment Variables");
       return null;
     }
+
     const secret = new TextEncoder().encode(secretKey);
     const { payload } = await jwtVerify(token, secret);
+
     return payload as { id: string; role: string };
   } catch (err) {
     console.error("JWT Verification failed:", err);

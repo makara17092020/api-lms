@@ -33,7 +33,7 @@ export default function ActiveClassesSection({ classes, loading }: Props) {
           </h2>
         </div>
 
-        <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-sm font-semibold shadow-md">
+        <div className="px-4 py-1.5 rounded-full bg-linear-to-r from-violet-500 to-indigo-500 text-white text-sm font-semibold shadow-md">
           {classes.length} Classes
         </div>
       </div>
