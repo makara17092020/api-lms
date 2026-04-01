@@ -10,6 +10,8 @@ import {
   BrainCircuit,
   LogOut,
   RefreshCw,
+  TrendingUp,
+  FileCheck,
 } from "lucide-react";
 import LogoutModal from "@/components/users/LogoutModal";
 
@@ -25,7 +27,8 @@ export default function Sidebar() {
 
   // 📂 Determine the base route based on current path
   const isAdmin = pathname.startsWith("/admin");
-  const baseRoute = pathname.startsWith("/admin") ? "/admin" : pathname.startsWith("/teacher") ? "/teacher" : "/student";
+  const isTeacher = pathname.startsWith("/teacher");
+  const baseRoute = isAdmin ? "/admin" : isTeacher ? "/teacher" : "/student";
 
   // Dynamic menu items routing
   const menuItems = [
@@ -44,7 +47,15 @@ export default function Sidebar() {
       name: "Study Plans",
       href: isAdmin ? "/admin/study-plans" : `${baseRoute}/study-plans`,
       icon: BrainCircuit,
-    }, // 👈 Maps to admin or other panel!
+    },
+    // Teacher-only inline dashboard tabs in same menu area
+    ...(isTeacher
+      ? [
+          { name: "Students", href: "/teacher?tab=students", icon: Users },
+          { name: "Progress", href: "/teacher?tab=progress", icon: TrendingUp },
+          { name: "Exams", href: "/teacher?tab=exams", icon: FileCheck },
+        ]
+      : []),
   ];
 
   const handleUIRefresh = () => {
