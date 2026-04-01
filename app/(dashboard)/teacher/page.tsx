@@ -14,5 +14,5 @@ export default async function TeacherDashboard() {
     redirect("/dashboard");
   }
 
-  return <TeacherDashboardContent user={session.user} />;
+  return <TeacherDashboardContent/>;
 }
