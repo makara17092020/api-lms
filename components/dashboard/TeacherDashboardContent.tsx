@@ -28,6 +28,19 @@ export default function TeacherDashboardContent() {
   const [activeExams, setActiveExams] = useState(0);
 
   useEffect(() => {
+    // Listen for tab change events from sidebar
+    const handleTabChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      setActiveTab(customEvent.detail.tab);
+    };
+
+    window.addEventListener("teacher-tab-change", handleTabChange);
+    return () => window.removeEventListener("teacher-tab-change", handleTabChange);
+  }, []);
+
+
+
+  useEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/classes?type=teacher");
@@ -84,22 +97,6 @@ export default function TeacherDashboardContent() {
         <Topbar title="Teacher Dashboard" />
 
         <div className="flex-1 overflow-auto p-6 lg:p-8 space-y-8 bg-white m-4 rounded-3xl shadow-sm">
-          <div className="flex border-b border-gray-200 bg-gray-50 rounded-3xl p-1 shadow-sm">
-            {["classes", "students", "progress", "exams"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`flex-1 py-3 text-sm font-medium rounded-2xl transition-all ${
-                  activeTab === tab
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg"
-                    : "text-gray-600 hover:bg-white hover:shadow-sm"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-
           <TeacherStatsCards
             totalStudents={totalStudents}
             activeClasses={activeClasses}
