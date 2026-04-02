@@ -1,5 +1,8 @@
-// next.config.ts
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// next.config.ts
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   images: {
@@ -11,11 +14,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "your-storage.com", // This stops it from crashing on dummy links!
+        hostname: "your-storage.com",
         pathname: "/**",
       },
     ],
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

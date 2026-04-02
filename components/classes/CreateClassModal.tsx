@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Loader2, AlertCircle } from "lucide-react";
-import { Teacher } from "@/app/(dashboard)/admin/classes/page";
+import { Teacher } from "@/app/[locale]/(dashboard)/admin/classes/page";
 
 interface CreateClassModalProps {
   teachers: Teacher[];

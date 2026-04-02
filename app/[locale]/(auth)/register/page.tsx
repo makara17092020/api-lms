@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { useTranslations, useLocale } from "next-intl";
 import { motion, AnimatePresence, cubicBezier } from "framer-motion";
 import {
+  User,
   Mail,
   Lock,
   Eye,
@@ -40,7 +42,11 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
 };
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const t = useTranslations("Auth");
+  const locale = useLocale();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -52,23 +58,24 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
+
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Invalid credentials");
+      if (!response.ok) {
+        throw new Error(data.error || t("registrationFailed"));
+      }
 
-      if (data.user?.role === "SUPER_ADMIN") router.push("/admin");
-      else if (data.user?.role === "TEACHER") router.push("/teacher");
-      else router.push("/student");
-
+      router.push(`/${locale}/student`);
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || t("unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -77,7 +84,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: `/${locale}` });
     setLoading(false);
   };
 
@@ -89,7 +96,7 @@ export default function LoginPage() {
         variants={containerVariants}
         className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row-reverse overflow-hidden rounded-3xl bg-white shadow-2xl border border-white/60"
       >
-        {/* FORM SIDE (Matches Register Page Layout) */}
+        {/* FORM SIDE */}
         <motion.div
           variants={cardVariants}
           className="flex-1 lg:w-5/12 bg-white/95 backdrop-blur-3xl p-10 lg:p-16 flex items-center justify-center border-l border-white/40"
@@ -111,10 +118,10 @@ export default function LoginPage() {
                 transition={{ delay: 0.2, ease: EASE }}
               >
                 <h1 className="text-4xl font-semibold tracking-tighter text-gray-950">
-                  Welcome back
+                  {t("createAccount")}
                 </h1>
                 <p className="text-gray-500 mt-1 text-lg">
-                  Sign in to continue your journey
+                  {t("joinThousands")}
                 </p>
               </motion.div>
             </div>
@@ -139,7 +146,30 @@ export default function LoginPage() {
                 animate="visible"
                 className="space-y-6"
               >
-                {/* Email Input - Peer Style */}
+                {/* Full Name */}
+                <motion.div variants={itemVariants} className="relative">
+                  <input
+                    id="name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder=" "
+                    className="peer w-full rounded-3xl border border-gray-200 bg-white px-5 py-5 pl-12 text-lg focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/70 outline-none transition-all duration-300"
+                  />
+                  <User
+                    className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500 transition-colors"
+                    size={22}
+                  />
+                  <label
+                    htmlFor="name"
+                    className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
+                  >
+                    {t("fullName")}
+                  </label>
+                </motion.div>
+
+                {/* Email */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="email"
@@ -158,11 +188,11 @@ export default function LoginPage() {
                     htmlFor="email"
                     className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
                   >
-                    Email address
+                    {t("email")}
                   </label>
                 </motion.div>
 
-                {/* Password Input - Peer Style */}
+                {/* Password */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="password"
@@ -181,7 +211,7 @@ export default function LoginPage() {
                     htmlFor="password"
                     className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
                   >
-                    Password
+                    {t("password")}
                   </label>
                   <button
                     type="button"
@@ -192,6 +222,7 @@ export default function LoginPage() {
                   </button>
                 </motion.div>
 
+                {/* Submit */}
                 <motion.button
                   variants={itemVariants}
                   type="submit"
@@ -203,11 +234,11 @@ export default function LoginPage() {
                   <span className="relative z-10 flex items-center justify-center gap-3">
                     {loading ? (
                       <>
-                        <Loader2 className="animate-spin" size={20} /> Signing
-                        in...
+                        <Loader2 className="animate-spin" size={20} />
+                        {t("creatingAccount")}
                       </>
                     ) : (
-                      "Sign in"
+                      t("createAccountButton")
                     )}
                   </span>
                   <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-0" />
@@ -215,7 +246,7 @@ export default function LoginPage() {
               </motion.div>
             </form>
 
-            {/* Google Section */}
+            {/* Google */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -225,7 +256,7 @@ export default function LoginPage() {
               <div className="flex items-center gap-4 my-6">
                 <div className="h-px flex-1 bg-gray-200" />
                 <span className="text-xs text-gray-400 font-medium tracking-widest text-center">
-                  OR CONTINUE WITH
+                  {t("orContinueWith")}
                 </span>
                 <div className="h-px flex-1 bg-gray-200" />
               </div>
@@ -245,20 +276,19 @@ export default function LoginPage() {
             </motion.div>
 
             <div className="mt-10 text-center text-sm text-gray-500">
-              New to the platform?{" "}
+              {t("alreadyHaveAccount")}{" "}
               <Link
-                href="/register"
+                href={`/${locale}/login`}
                 className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
               >
-                Create account
+                {t("signInButton")}
               </Link>
             </div>
           </div>
         </motion.div>
 
-        {/* ILLUSTRATION SIDE (Matches Register Page Styling) */}
+        {/* ILLUSTRATION SIDE */}
         <div className="hidden lg:flex flex-1 lg:w-7/12 relative overflow-hidden bg-linear-to-br from-indigo-950 via-violet-950 to-indigo-950">
-          {/* Back to Home Button (Pill Style) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -266,14 +296,14 @@ export default function LoginPage() {
             className="absolute top-8 left-8 z-20"
           >
             <Link
-              href="/"
+              href={`/${locale}`}
               className="flex items-center gap-2 px-5 py-2.5 bg-black/20 hover:bg-black/30 backdrop-blur-xl text-white font-semibold text-xs rounded-full border border-white/10 shadow-lg transition-all active:scale-95 group"
             >
               <ArrowLeft
                 size={14}
                 className="text-white/90 group-hover:text-white group-hover:-translate-x-0.5 transition-transform"
               />
-              Back to Home
+              {t("backToHome")}
             </Link>
           </motion.div>
 
@@ -296,11 +326,10 @@ export default function LoginPage() {
 
           <div className="absolute bottom-16 left-16 max-w-md text-white">
             <h2 className="text-5xl font-semibold tracking-tighter leading-none">
-              Unlock your <span className="text-violet-300">potential</span>
+              {t("startYour")}{" "}
+              <span className="text-violet-300">{t("journey")}</span>
             </h2>
-            <p className="mt-6 text-xl text-white/80">
-              The most delightful learning experience on the planet.
-            </p>
+            <p className="mt-6 text-xl text-white/80">{t("joinDelightful")}</p>
           </div>
         </div>
       </motion.div>
