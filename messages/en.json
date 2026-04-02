@@ -91,6 +91,11 @@
     "signIn": "Sign in",
     "noCreditCard": "No credit card required · Free forever for students"
   },
+  "Dashboard": {
+    "continueLearning": "Continue Learning",
+    "totalClasses": "Total Classes",
+    "studyPlans": "Study Plans"
+  },
   "Footer": {
     "description": "The modern platform for next-generation students and teachers.",
     "productTitle": "Product",
@@ -101,5 +106,10 @@
     "aboutUs": "About Us",
     "contact": "Contact",
     "allRightsReserved": "All rights reserved."
+  },
+  "Questions": {
+    "title": "Class Questions",
+    "back": "Back to Dashboard",
+    "noQuestions": "No questions available for this class yet."
   }
 }

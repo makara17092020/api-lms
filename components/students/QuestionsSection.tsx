@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { MessageSquare, CheckCircle, AlertCircle } from "lucide-react";
+import { MessageSquare, Loader2, Inbox } from "lucide-react";
+import AnswerQuestionModal from "./AnswerQuestionModal";
 
 interface Question {
   id: string;
@@ -10,228 +11,157 @@ interface Question {
   description: string;
   type: "TEXT" | "MULTIPLE_CHOICE";
   options: string[];
-  answers?: Array<{
-    id: string;
-    answerText: string;
-    student: { name: string; email: string };
-  }>;
+  answers?: any[];
 }
 
-interface AnswerQuestionModalProps {
-  question: Question;
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+// 1. Made classId optional (?) so it works on the Main Dashboard too
+interface QuestionsSectionProps {
+  classId?: string;
 }
 
-function AnswerQuestionModal({ question, isOpen, onClose, onSuccess }: AnswerQuestionModalProps) {
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+export default function QuestionsSection({ classId }: QuestionsSectionProps) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  // 2. Optimized Fetch Logic
+  const fetchQuestions = useCallback(async () => {
     setLoading(true);
-
     try {
-      const res = await fetch("/api/answers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questionId: question.id, answerText: answer }),
-      });
+      /**
+       * If classId exists: Fetch questions for that specific class.
+       * If classId is missing: Fetch all pending questions for the student.
+       */
+      const endpoint = classId
+        ? `/api/questions?classId=${classId}`
+        : "/api/questions?type=student";
+
+      const res = await fetch(endpoint);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed");
-      onSuccess();
-      onClose();
-      setAnswer("");
-    } catch (err: any) {
-      setError(err.message);
+
+      if (Array.isArray(data)) {
+        // Filter out questions that already have answers from this student
+        const unanswered = data.filter(
+          (q: Question) => !q.answers || q.answers.length === 0,
+        );
+        setQuestions(unanswered);
+      }
+    } catch (err) {
+      console.error("Failed to load questions:", err);
     } finally {
       setLoading(false);
     }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="relative bg-white rounded-3xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">{question.title}</h3>
-          <p className="text-gray-600 mb-6">{question.description}</p>
-
-          <form onSubmit={handleSubmit}>
-            {question.type === "MULTIPLE_CHOICE" ? (
-              <div className="space-y-3">
-                {question.options.map((option, index) => (
-                  <label key={index} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="answer"
-                      value={option}
-                      onChange={(e) => setAnswer(e.target.value)}
-                      className="text-blue-600"
-                      required
-                    />
-                    <span className="text-gray-700">{option}</span>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <textarea
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your answer..."
-                rows={6}
-                required
-              />
-            )}
-
-            {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl mt-4">
-                <AlertCircle size={20} className="text-red-500" />
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
-
-            <div className="flex gap-4 mt-6">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium disabled:opacity-50"
-              >
-                {loading ? "Submitting..." : "Submit Answer"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-export default function QuestionsSection() {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  }, [classId]);
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [fetchQuestions]);
 
-  const fetchQuestions = async () => {
-    try {
-      // Get student's classes first
-      const classRes = await fetch("/api/classes?type=student");
-      const classes = await classRes.json();
-
-      if (Array.isArray(classes) && classes.length > 0) {
-        // Fetch questions for each class
-        const questionsPromises = classes.map((cls: any) =>
-          fetch(`/api/questions?classId=${cls.id}`).then(res => res.json())
-        );
-        const questionsArrays = await Promise.all(questionsPromises);
-        const allQuestions = questionsArrays.flat();
-
-        // Filter out questions already answered (answers array will have entries if answered)
-        const unansweredQuestions = allQuestions.filter((q: Question) =>
-          !q.answers || q.answers.length === 0
-        );
-
-        setQuestions(unansweredQuestions);
-      }
-    } catch (err) {
-      console.error("Failed to load questions", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAnswer = (question: Question) => {
+  const handleAnswerClick = (question: Question) => {
     setSelectedQuestion(question);
     setIsModalOpen(true);
   };
 
-  const handleSuccess = () => {
-    fetchQuestions();
-  };
-
+  // --- Loading State ---
   if (loading) {
     return (
-      <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-full"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
+        <p className="text-slate-500 font-medium animate-pulse">
+          Gathering your assignments...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-      <div className="flex items-center gap-3 mb-6">
-        <MessageSquare className="text-blue-600" size={24} />
-        <h2 className="text-2xl font-bold text-gray-900">Questions</h2>
+    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
+            <MessageSquare
+              className="text-indigo-600 dark:text-indigo-400"
+              size={24}
+            />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              {classId ? "Class Questions" : "Pending Tasks"}
+            </h2>
+            <p className="text-sm text-slate-500">
+              {questions.length} items require your attention
+            </p>
+          </div>
+        </div>
       </div>
 
+      {/* --- Empty State --- */}
       {questions.length === 0 ? (
-        <div className="text-center py-8">
-          <MessageSquare size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">No questions available at the moment.</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-3xl"
+        >
+          <div className="mx-auto w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+            <Inbox size={32} className="text-slate-300" />
+          </div>
+          <p className="text-slate-900 dark:text-white font-semibold">
+            All caught up!
+          </p>
+          <p className="text-sm text-slate-500 max-w-xs mx-auto mt-1">
+            You have answered all questions available at this time.
+          </p>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
-          {questions.map((question) => (
-            <div key={question.id} className="border border-gray-200 rounded-2xl p-6 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{question.title}</h3>
-                  <p className="text-gray-600 mb-3">{question.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      {question.type === "MULTIPLE_CHOICE" ? "Multiple Choice" : "Text Answer"}
-                    </span>
-                    {question.type === "MULTIPLE_CHOICE" && (
-                      <span>{question.options.length} options</span>
-                    )}
-                  </div>
+        /* --- Questions List --- */
+        <div className="grid gap-5">
+          {questions.map((question, index) => (
+            <motion.div
+              key={question.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="group relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-all"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
+                    {question.type
+                      ? question.type.replace("_", " ")
+                      : "GENERAL"}
+                  </span>
                 </div>
-                <button
-                  onClick={() => handleAnswer(question)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
-                >
-                  Answer
-                </button>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {question.title}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 line-clamp-2">
+                  {question.description}
+                </p>
               </div>
-            </div>
+
+              <button
+                onClick={() => handleAnswerClick(question)}
+                className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-100 dark:shadow-none transition-all active:scale-95"
+              >
+                Answer Now
+              </button>
+            </motion.div>
           ))}
         </div>
       )}
 
-      <AnswerQuestionModal
-        question={selectedQuestion!}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleSuccess}
-      />
+      {/* --- The Pop-up Modal --- */}
+      {selectedQuestion && (
+        <AnswerQuestionModal
+          question={selectedQuestion}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={fetchQuestions}
+        />
+      )}
     </div>
   );
 }

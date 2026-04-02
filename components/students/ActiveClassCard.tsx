@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { GraduationCap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl"; // 👈 Add these
 
 interface ClassItem {
   id: string;
@@ -17,6 +18,9 @@ interface Props {
 }
 
 export default function ActiveClassCard({ cls, index }: Props) {
+  const locale = useLocale(); // 👈 Get current locale (en or km)
+  const t = useTranslations("Dashboard"); // 👈 For "Continue Learning"
+
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -35,9 +39,7 @@ export default function ActiveClassCard({ cls, index }: Props) {
       }
     };
 
-    if (cls.id) {
-      fetchProgress();
-    }
+    if (cls.id) fetchProgress();
   }, [cls.id]);
 
   return (
@@ -49,8 +51,7 @@ export default function ActiveClassCard({ cls, index }: Props) {
       whileHover={{ y: -6 }}
       className="group relative rounded-3xl bg-white/70 dark:bg-slate-900/70 border border-white/30 dark:border-slate-700/60 overflow-hidden"
     >
-      {/* 1. Added pointer-events-none to prevent overlay click hijacking */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-violet-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="p-6">
         <div className="flex justify-between items-start">
@@ -75,16 +76,16 @@ export default function ActiveClassCard({ cls, index }: Props) {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            className="h-full bg-gradient-to-r from-violet-400 to-fuchsia-400"
+            className="h-full bg-linear-to-r from-violet-400 to-fuchsia-400"
           />
         </div>
 
-        {/* 2. Swapped button for Link tag with z-index to force browser click priority */}
+        {/* 3. Updated Href to include locale */}
         <Link
-          href={`/student/classes/${cls.id}/questions`}
-          className="relative z-50 mt-8 flex w-full cursor-pointer items-center justify-center gap-2 rounded-3xl bg-gradient-to-r from-violet-500 to-fuchsia-500 py-4 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
+          href={`/${locale}/student/classes/${cls.id}/questions`}
+          className="relative z-50 mt-8 flex w-full cursor-pointer items-center justify-center gap-2 rounded-3xl bg-linear-to-r from-violet-500 to-fuchsia-500 py-4 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-95"
         >
-          Continue Learning
+          {t("continueLearning")}
           <ArrowRight size={18} />
         </Link>
       </div>

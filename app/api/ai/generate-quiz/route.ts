@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const ai = new GoogleGenerativeAI('{}');
+const ai = new GoogleGenerativeAI("{}");
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     }
 
     // Use Gemini 2.5 Flash with JSON enforcement
-    const model = genAI.getGenerativeModel({
+    const model = ai.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });

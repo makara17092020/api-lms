@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
-const ai = new GoogleGenerativeAI('{}');
+const ai = new GoogleGenerativeAI("{}");
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: any }) {
     if (!task)
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-    const model = genAI.getGenerativeModel({
+    const model = ai.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
