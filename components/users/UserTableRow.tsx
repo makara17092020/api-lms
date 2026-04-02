@@ -1,7 +1,7 @@
 "use client";
 
 import { Edit, Trash2 } from "lucide-react";
-import { User, UserRole } from "@/app/(dashboard)/admin/users/page";
+import { User, UserRole } from "@/app/[locale]/(dashboard)/admin/users/page";
 
 interface UserTableRowProps {
   user: User;

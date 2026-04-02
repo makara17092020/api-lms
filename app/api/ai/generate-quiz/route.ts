@@ -1,11 +1,10 @@
-// app/api/ai/generate-quiz/route.ts
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const ai = new GoogleGenerativeAI({});
+const ai = new GoogleGenerativeAI('{}');
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -14,11 +13,7 @@ async function getAuth() {
 
   try {
     const secretKey = process.env.ACCESS_TOKEN_SECRET;
-    if (!secretKey) {
-      console.error("[AUTH_ERROR]: ACCESS_TOKEN_SECRET is missing");
-      return null;
-    }
-
+    if (!secretKey) return null;
     const secret = new TextEncoder().encode(secretKey);
     const { payload } = await jwtVerify(token, secret);
     return payload as { id: string; role: string };
@@ -46,71 +41,53 @@ export async function POST(req: Request) {
       );
     }
 
-    // Stronger prompt for Gemini (same style as your generate-plan)
-    const prompt = `
-You are an expert teacher creating a final assessment quiz.
-Study Plan Content:
-${planContent}
-
-Generate **exactly 5** high-quality multiple-choice questions that test deep understanding of the material.
-Each question must have **exactly 4** options.
-Make questions clear, non-trivial, and directly related to the study plan.
-
-Return ONLY valid JSON in this exact structure:
-{
-  "questions": [
-    {
-      "question": "Full question text here?",
-      "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
-      "answer": "The exact text of the correct option"
-    }
-  ]
-}`;
-
-    const response = await ai.models.generateContent({
+    // Use Gemini 2.5 Flash with JSON enforcement
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            questions: {
-              type: Type.ARRAY,
-              description: "Exactly 5 multiple-choice questions",
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  question: { type: Type.STRING },
-                  options: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  answer: { type: Type.STRING },
-                },
-                required: ["question", "options", "answer"],
-              },
-            },
-          },
-          required: ["questions"],
-        },
-      },
+      generationConfig: { responseMimeType: "application/json" },
     });
 
-    const aiOutput = JSON.parse(response.text || "{}");
-    const questions = aiOutput.questions || [];
+    const prompt = `
+      You are an expert teacher creating a final assessment quiz.
+      Study Plan Content: ${planContent}
 
-    if (!Array.isArray(questions) || questions.length !== 5) {
-      throw new Error("AI did not return exactly 5 questions");
+      Generate exactly 5 high-quality multiple-choice questions.
+      Each question must have exactly 4 options.
+      
+      Return ONLY a JSON object:
+      {
+        "questions": [
+          {
+            "question": "string",
+            "options": ["string", "string", "string", "string"],
+            "answer": "string"
+          }
+        ]
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Robust JSON Extraction
+    let aiOutput;
+    try {
+      const firstBracket = text.indexOf("{");
+      const lastBracket = text.lastIndexOf("}");
+      aiOutput = JSON.parse(text.substring(firstBracket, lastBracket + 1));
+    } catch (e) {
+      throw new Error("AI returned invalid JSON formatting.");
     }
 
-    // Save quiz + questions in a transaction
+    const questions = aiOutput.questions || [];
+
     const quiz = await prisma.$transaction(async (tx) => {
       const createdQuiz = await tx.quiz.create({
         data: {
           studyPlanId: planId,
           studentId: auth.id,
-          title: `Quiz on ${planContent.substring(0, 50)}...`,
+          title: `Quiz: ${planContent.substring(0, 30)}...`,
         },
       });
 

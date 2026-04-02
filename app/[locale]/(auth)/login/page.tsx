@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
+import { useTranslations, useLocale } from "next-intl"; // NEW: Translation Hooks
 import { motion, AnimatePresence, cubicBezier } from "framer-motion";
 import {
-  User,
   Mail,
   Lock,
   Eye,
@@ -41,8 +41,10 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
 };
 
-export default function RegisterPage() {
-  const [name, setName] = useState("");
+export default function LoginPage() {
+  const t = useTranslations("Auth"); // Fetch translation dictionary
+  const locale = useLocale(); // Get current locale to prefix routes
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -54,24 +56,24 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
-      }
+      if (!response.ok) throw new Error(data.error || t("invalidCredentials"));
 
-      router.push("/dashboard/student");
+      // Redirect using the current locale
+      if (data.user?.role === "SUPER_ADMIN") router.push(`/${locale}/admin`);
+      else if (data.user?.role === "TEACHER") router.push(`/${locale}/teacher`);
+      else router.push(`/${locale}/student`);
+
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+      setError(err.message || t("unexpectedError"));
     } finally {
       setLoading(false);
     }
@@ -80,9 +82,7 @@ export default function RegisterPage() {
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
-    await signIn("google", {
-      callbackUrl: `${window.location.origin}/`,
-    });
+    await signIn("google", { callbackUrl: `/${locale}` });
     setLoading(false);
   };
 
@@ -116,10 +116,10 @@ export default function RegisterPage() {
                 transition={{ delay: 0.2, ease: EASE }}
               >
                 <h1 className="text-4xl font-semibold tracking-tighter text-gray-950">
-                  Create account
+                  {t("welcomeBack")}
                 </h1>
                 <p className="text-gray-500 mt-1 text-lg">
-                  Join thousands mastering skills with AI
+                  {t("signInToContinue")}
                 </p>
               </motion.div>
             </div>
@@ -144,28 +144,7 @@ export default function RegisterPage() {
                 animate="visible"
                 className="space-y-6"
               >
-                <motion.div variants={itemVariants} className="relative">
-                  <input
-                    id="name"
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder=" "
-                    className="peer w-full rounded-3xl border border-gray-200 bg-white px-5 py-5 pl-12 text-lg focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/70 outline-none transition-all duration-300"
-                  />
-                  <User
-                    className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 peer-focus:text-indigo-500 transition-colors"
-                    size={22}
-                  />
-                  <label
-                    htmlFor="name"
-                    className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
-                  >
-                    Full name
-                  </label>
-                </motion.div>
-
+                {/* Email Input */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="email"
@@ -184,10 +163,11 @@ export default function RegisterPage() {
                     htmlFor="email"
                     className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
                   >
-                    Email address
+                    {t("email")}
                   </label>
                 </motion.div>
 
+                {/* Password Input */}
                 <motion.div variants={itemVariants} className="relative">
                   <input
                     id="password"
@@ -206,7 +186,7 @@ export default function RegisterPage() {
                     htmlFor="password"
                     className="pointer-events-none absolute left-12 top-5 text-lg text-gray-500 transition-all duration-200 peer-focus:top-2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-indigo-600 peer-not-placeholder-shown:top-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:font-medium peer-not-placeholder-shown:text-indigo-600"
                   >
-                    Password
+                    {t("password")}
                   </label>
                   <button
                     type="button"
@@ -229,10 +209,10 @@ export default function RegisterPage() {
                     {loading ? (
                       <>
                         <Loader2 className="animate-spin" size={20} />{" "}
-                        Creating...
+                        {t("signingIn")}
                       </>
                     ) : (
-                      "Create Account"
+                      t("signInButton")
                     )}
                   </span>
                   <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-0" />
@@ -240,6 +220,7 @@ export default function RegisterPage() {
               </motion.div>
             </form>
 
+            {/* Google Section */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -249,7 +230,7 @@ export default function RegisterPage() {
               <div className="flex items-center gap-4 my-6">
                 <div className="h-px flex-1 bg-gray-200" />
                 <span className="text-xs text-gray-400 font-medium tracking-widest text-center">
-                  OR CONTINUE WITH
+                  {t("orContinueWith")}
                 </span>
                 <div className="h-px flex-1 bg-gray-200" />
               </div>
@@ -269,12 +250,12 @@ export default function RegisterPage() {
             </motion.div>
 
             <div className="mt-10 text-center text-sm text-gray-500">
-              Already have an account?{" "}
+              {t("newToPlatform")}{" "}
               <Link
-                href="/login"
+                href={`/${locale}/register`}
                 className="font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
               >
-                Sign in
+                {t("createAccount")}
               </Link>
             </div>
           </div>
@@ -282,7 +263,6 @@ export default function RegisterPage() {
 
         {/* ILLUSTRATION SIDE */}
         <div className="hidden lg:flex flex-1 lg:w-7/12 relative overflow-hidden bg-linear-to-br from-indigo-950 via-violet-950 to-indigo-950">
-          {/* --- UPDATED BACK TO HOME BUTTON --- */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -290,14 +270,14 @@ export default function RegisterPage() {
             className="absolute top-8 left-8 z-20"
           >
             <Link
-              href="/"
+              href={`/${locale}`}
               className="flex items-center gap-2 px-5 py-2.5 bg-black/20 hover:bg-black/30 backdrop-blur-xl text-white font-semibold text-xs rounded-full border border-white/10 shadow-lg transition-all active:scale-95 group"
             >
               <ArrowLeft
                 size={14}
                 className="text-white/90 group-hover:text-white group-hover:-translate-x-0.5 transition-transform"
               />
-              Back to Home
+              {t("backToHome")}
             </Link>
           </motion.div>
 
@@ -320,10 +300,11 @@ export default function RegisterPage() {
 
           <div className="absolute bottom-16 left-16 max-w-md text-white">
             <h2 className="text-5xl font-semibold tracking-tighter leading-none">
-              Start your <span className="text-violet-300">journey</span>
+              {t("unlockYour")}{" "}
+              <span className="text-violet-300">{t("potential")}</span>
             </h2>
             <p className="mt-6 text-xl text-white/80">
-              Join the most delightful AI-powered learning experience.
+              {t("delightfulLearning")}
             </p>
           </div>
         </div>
