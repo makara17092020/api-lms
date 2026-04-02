@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-// Initialize the correct SDK
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const ai = new GoogleGenerativeAI('{}');
 
 async function getAuth() {
   const cookieStore = await cookies();

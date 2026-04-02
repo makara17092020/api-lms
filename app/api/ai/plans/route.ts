@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const classId = searchParams.get("classId");
 
-  const whereCondition: any =
-    auth.role === "STUDENT" ? { studentId: auth.id } : {};
+  type PlansFilter = { studentId?: string; classId?: string };
+  const whereCondition: PlansFilter = auth.role === "STUDENT" ? { studentId: auth.id } : {};
   if (classId) whereCondition.classId = classId;
 
   try {
@@ -43,7 +43,13 @@ export async function GET(request: NextRequest) {
             isCompleted: true,
           },
         },
-        class: { select: { className: true } },
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });

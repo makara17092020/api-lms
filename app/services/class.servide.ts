@@ -59,7 +59,7 @@ export class ClassService {
     return prisma.class.findMany({
       where: { teacherId },
       include: {
-        _count: { select: { enrollments: true } }, // Pull metrics
+        _count: { select: { enrollments: true, questions: true } }, // Pull metrics
         enrollments: {
           include: {
             student: {

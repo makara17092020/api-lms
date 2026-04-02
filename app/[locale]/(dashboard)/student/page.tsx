@@ -9,6 +9,7 @@ import HeaderSection from "@/components/students/HeaderSection";
 import StatsSection from "@/components/students/StatsSection";
 import ActiveClassesSection from "@/components/students/ActiveClassesSection";
 import GeneratePlanForm from "@/components/students/GeneratePlanForm";
+import QuestionsSection from "@/components/students/QuestionsSection";
 
 // Import the reusable skeleton
 import LoadingSkeleton from "@/components/students/LoadingSkeleton";
@@ -129,6 +130,8 @@ export default function StudentDashboardPage() {
             />
 
             <ActiveClassesSection classes={classes} loading={false} />
+
+            <QuestionsSection />
 
             <GeneratePlanForm
               level={level}
