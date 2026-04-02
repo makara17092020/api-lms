@@ -13,7 +13,7 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
-import { ClassModel } from "@/app/(dashboard)/admin/classes/page";
+import { ClassModel } from "@/app/[locale]/(dashboard)/admin/classes/page";
 
 interface ClassCardProps {
   cls: ClassModel;

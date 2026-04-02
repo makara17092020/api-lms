@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useLocale } from "next-intl"; // 👈 Added this
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -18,69 +19,88 @@ import LogoutModal from "@/components/users/LogoutModal";
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const locale = useLocale(); // 👈 Get current locale (en or km)
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // 🚪 Popup and Action states
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
-  // 📂 Determine the base route based on current path
-  const isAdmin = pathname.startsWith("/admin");
-  const isTeacher = pathname.startsWith("/teacher");
+  // 📂 1. Fix: Determine the role by stripping the locale from the path
+  // This ensures that "/en/admin" is recognized as Admin
+  const pathWithoutLocale = pathname.replace(`/${locale}`, "") || "/";
+
+  const isAdmin = pathWithoutLocale.startsWith("/admin");
+  const isTeacher = pathWithoutLocale.startsWith("/teacher");
   const baseRoute = isAdmin ? "/admin" : isTeacher ? "/teacher" : "/student";
 
-  // Dynamic menu items routing
+  // 📂 2. Fix: Prefix all HREFs with the current locale
   const menuItems = [
     {
       name: "Dashboard",
-      href: baseRoute,
+      href: `/${locale}${baseRoute}`,
       icon: LayoutDashboard,
     },
-    { name: "Users", href: "/admin/users", icon: Users, hide: !isAdmin }, // Hide users panel if not admin
+    {
+      name: "Users",
+      href: `/${locale}/admin/users`,
+      icon: Users,
+      hide: !isAdmin,
+    },
     {
       name: "Classes",
-      href: isAdmin ? "/admin/classes" : `${baseRoute}/classes`,
+      href: isAdmin
+        ? `/${locale}/admin/classes`
+        : `/${locale}${baseRoute}/classes`,
       icon: BookOpen,
     },
     {
       name: "Study Plans",
-      href: isAdmin ? "/admin/study-plans" : `${baseRoute}/study-plans`,
+      href: isAdmin
+        ? `/${locale}/admin/study-plans`
+        : `/${locale}${baseRoute}/study-plans`,
       icon: BrainCircuit,
     },
-    // Teacher-only inline dashboard tabs in same menu area
     ...(isTeacher
       ? [
-          { name: "Students", href: "/teacher?tab=students", icon: Users },
-          { name: "Progress", href: "/teacher?tab=progress", icon: TrendingUp },
-          { name: "Exams", href: "/teacher?tab=exams", icon: FileCheck },
+          {
+            name: "Students",
+            href: `/${locale}/teacher?tab=students`,
+            icon: Users,
+          },
+          {
+            name: "Progress",
+            href: `/${locale}/teacher?tab=progress`,
+            icon: TrendingUp,
+          },
+          {
+            name: "Exams",
+            href: `/${locale}/teacher?tab=exams`,
+            icon: FileCheck,
+          },
         ]
       : []),
   ];
 
   const handleUIRefresh = () => {
     setIsRefreshing(true);
-
-    // 📢 Broadcast event to tell pages to show skeletons
     window.dispatchEvent(new Event("trigger-dashboard-refresh"));
-
     router.refresh();
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   const handleConfirmLogout = async () => {
     setLogoutLoading(true);
-
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
         setIsLogoutOpen(false);
-        router.push("/login");
+        // Ensure redirect goes to localized login
+        router.push(`/${locale}/login`);
         router.refresh();
       }
     } catch (error) {
       console.error("Logout failed:", error);
-      window.location.href = "/login";
+      window.location.href = `/${locale}/login`;
     } finally {
       setLogoutLoading(false);
     }
@@ -94,7 +114,6 @@ export default function Sidebar() {
             AI Academy
           </span>
 
-          {/* Sleek Visual Refresh Button */}
           <button
             onClick={handleUIRefresh}
             disabled={isRefreshing}
@@ -110,7 +129,7 @@ export default function Sidebar() {
 
         <nav className="flex-1 p-4 space-y-1.5">
           {menuItems.map((item) => {
-            if (item.hide) return null; // 👈 Checks if it should hide on context (e.g., student view hide admin controls)
+            if (item.hide) return null;
 
             const isActive = pathname === item.href;
 

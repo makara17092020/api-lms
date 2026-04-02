@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { X, Loader2, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { ClassModel, Teacher } from "@/app/(dashboard)/admin/classes/page";
+import {
+  ClassModel,
+  Teacher,
+} from "@/app/[locale]/(dashboard)/admin/classes/page";
 
 interface EditClassModalProps {
   cls: ClassModel;
