@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
-const ai = new GoogleGenAI({});
+const ai = new GoogleGenerativeAI({});
 
 async function getAuth() {
   const cookieStore = await cookies();

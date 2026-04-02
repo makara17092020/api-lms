@@ -17,16 +17,22 @@ async function getAuth() {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await getAuth();
 
   if (!auth || (auth.role !== "TEACHER" && auth.role !== "SUPER_ADMIN")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const studentId = url.searchParams.get("studentId");
+
   try {
     const students = await prisma.user.findMany({
-      where: { role: "STUDENT" },
+      where: {
+        role: "STUDENT",
+        ...(studentId ? { id: studentId } : {}),
+      },
       select: {
         id: true,
         name: true,

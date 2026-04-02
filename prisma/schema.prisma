@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,166 +6,140 @@ datasource db {
   provider = "postgresql"
 }
 
-// 1. User Roles
-enum Role {
-  SUPER_ADMIN
-  TEACHER
-  STUDENT
-}
-
-// prisma/schema.prisma
-
-// 2. User Entity
 model User {
-  id          String       @id @default(cuid())
-  name        String?
-  email       String       @unique
-  password    String?
-  role        Role         @default(STUDENT)
-  image       String?      
+  id           String       @id @default(cuid())
+  name         String?
+  email        String       @unique
+  password     String?
+  role         Role         @default(STUDENT)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  image        String?
   refreshToken String?
   answers      Answer[]
-
-  // Relations
-  classes     Class[]      @relation("TeacherClasses")
-  enrollments Enrollment[]
-  studyPlans  StudyPlan[]
-  results     Result[]
-  quizzes     Quiz[] // ← ADD THIS LINE     
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  classes      Class[]      @relation("TeacherClasses")
+  enrollments  Enrollment[]
+  quizzes      Quiz[]
+  results      Result[]
+  studyPlans   StudyPlan[]
 }
 
-// 3. Class Entity
 model Class {
-  id        String @id @default(cuid())
-  className String
-  teacherId String
-  teacher   User   @relation("TeacherClasses", fields: [teacherId], references: [id])
-
+  id          String       @id @default(cuid())
+  className   String
+  teacherId   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  teacher     User         @relation("TeacherClasses", fields: [teacherId], references: [id])
   enrollments Enrollment[]
   exams       Exam[]
   questions   Question[]
-  studyPlans  StudyPlan[] // ← ADD THIS LINE (back-relation)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  studyPlans  StudyPlan[]
 }
 
-// 4. Enrollment (Join Table for Many-to-Many: Student <-> Class)
 model Enrollment {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   classId   String
   studentId String
-  class     Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  @@unique([classId, studentId]) // Prevents double enrollment
+  @@unique([classId, studentId])
 }
 
-// ==================== STUDY PLAN MODEL (UPDATED) ====================
 model StudyPlan {
   id        String   @id @default(cuid())
   studentId String
-  classId   String? // ← optional for backward compatibility
-  student   User     @relation(fields: [studentId], references: [id])
-  class     Class?   @relation(fields: [classId], references: [id]) // ← NEW
   topic     String
   duration  Int
-  tasks     Task[]
-  quizzes   Quiz[] // ← NEW
   createdAt DateTime @default(now())
+  classId   String?
+  quizzes   Quiz[]
+  class     Class?   @relation(fields: [classId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
+  tasks     Task[]
 }
 
-// 6. Daily Tasks
 model Task {
   id              String    @id @default(cuid())
   studyPlanId     String
-  studyPlan       StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
   taskDescription String
   dayNumber       Int
   isCompleted     Boolean   @default(false)
-
-  // New Fields for Questions & Student Answers
-  quizQuestion  String    @default("Explain the core principle behind this task in your own words.")
-  studentAnswer String?   @db.Text // Use @db.Text so it can hold large essays/answers
-  completedAt   DateTime?
-
-  createdAt DateTime @default(now())
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  quizQuestion    String    @default("Explain the core principle behind this task in your own words.")
+  studentAnswer   String?
+  studyPlan       StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
 }
 
-// 7. Exam Entity
 model Exam {
   id        String   @id @default(cuid())
   classId   String
-  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
   examTitle String
   examDate  DateTime
-  results   Result[]
-
   createdAt DateTime @default(now())
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  results   Result[]
 }
 
-// 8. Results Entity
 model Result {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   studentId String
   examId    String
-  student   User   @relation(fields: [studentId], references: [id])
-  exam      Exam   @relation(fields: [examId], references: [id])
   score     Float
-
   createdAt DateTime @default(now())
+  exam      Exam     @relation(fields: [examId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
 }
 
-// 9. Question Entity
 model Question {
   id          String   @id @default(uuid())
   title       String
   description String
   classId     String
   createdAt   DateTime @default(now())
-
-  class   Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  answers Answer[]
+  answers     Answer[]
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
 }
 
-// 10. Answer Entity
 model Answer {
   id         String   @id @default(uuid())
   studentId  String
   questionId String
   answerText String
   createdAt  DateTime @default(now())
-
-  student  User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  student    User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, questionId])
 }
 
-// ==================== NEW MODELS (add at the very end) ====================
 model Quiz {
   id          String         @id @default(cuid())
   studyPlanId String
   studentId   String
   title       String
-  studyPlan   StudyPlan      @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
-  student     User           @relation(fields: [studentId], references: [id])
   generatedAt DateTime       @default(now())
+  student     User           @relation(fields: [studentId], references: [id])
+  studyPlan   StudyPlan      @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
   questions   QuizQuestion[]
 }
 
 model QuizQuestion {
   id            String   @id @default(cuid())
   quizId        String
-  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   question      String
   options       String[]
   correctAnswer String
   order         Int      @default(0)
   createdAt     DateTime @default(now())
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  SUPER_ADMIN
+  TEACHER
+  STUDENT
 }
