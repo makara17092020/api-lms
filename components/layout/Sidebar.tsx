@@ -39,6 +39,7 @@ export default function Sidebar() {
       name: "Dashboard",
       href: `/${locale}${baseRoute}`,
       icon: LayoutDashboard,
+      hide: isTeacher, // Hide Dashboard for teachers since they use Class/Student
     },
     {
       name: "Users",
@@ -47,35 +48,23 @@ export default function Sidebar() {
       hide: !isAdmin,
     },
     {
-      name: "Classes",
+      name: "Class",
       href: isAdmin
         ? `/${locale}/admin/classes`
-        : `/${locale}${baseRoute}/classes`,
+        : `/${locale}${baseRoute}`,
       icon: BookOpen,
-    },
-    {
-      name: "Study Plans",
-      href: isAdmin
-        ? `/${locale}/admin/study-plans`
-        : `/${locale}${baseRoute}/study-plans`,
-      icon: BrainCircuit,
     },
     ...(isTeacher
       ? [
           {
-            name: "Students",
-            href: `/${locale}/teacher?tab=students`,
+            name: "Student",
+            href: `/${locale}/teacher/students`,
             icon: Users,
           },
           {
-            name: "Progress",
-            href: `/${locale}/teacher?tab=progress`,
-            icon: TrendingUp,
-          },
-          {
-            name: "Exams",
-            href: `/${locale}/teacher?tab=exams`,
-            icon: FileCheck,
+            name: "Study Plans",
+            href: `/${locale}/teacher/plans`,
+            icon: BrainCircuit,
           },
         ]
       : []),
