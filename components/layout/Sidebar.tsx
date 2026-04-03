@@ -39,7 +39,7 @@ export default function Sidebar() {
       name: "Dashboard",
       href: `/${locale}${baseRoute}`,
       icon: LayoutDashboard,
-      hide: isTeacher, // Hide Dashboard for teachers since they use Class/Student
+      hide: isTeacher,
     },
     {
       name: "Users",
@@ -49,11 +49,17 @@ export default function Sidebar() {
     },
     {
       name: "Class",
-      href: isAdmin
-        ? `/${locale}/admin/classes`
-        : `/${locale}${baseRoute}`,
+      href: isAdmin ? `/${locale}/admin/classes` : `/${locale}${baseRoute}`,
       icon: BookOpen,
     },
+    // --- Added Study Plans for Admin ---
+    {
+      name: "Study Plans",
+      href: `/${locale}/admin/study-plans`,
+      icon: BrainCircuit, // Using the same icon as teacher for consistency
+      hide: !isAdmin,
+    },
+    // -----------------------------------
     ...(isTeacher
       ? [
           {
