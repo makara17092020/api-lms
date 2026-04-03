@@ -29,9 +29,6 @@ export default async function LocaleLayout(props: {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      {/* Next.js 16 requires <body> to be a direct child of <html> 
-          to avoid hydration mismatch errors.
-      */}
       <body className="antialiased" suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{props.children}</Providers>

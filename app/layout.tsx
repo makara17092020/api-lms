@@ -6,9 +6,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
-    </html>
-  );
+  // Do NOT include <html> or <body> tags here
+  return children;
 }
