@@ -1,14 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sparkles,
-  Clock,
-  PlusCircle,
-  AlertCircle,
-  Minus,
-  Plus,
-} from "lucide-react";
+import { Sparkles, PlusCircle, AlertCircle, Minus, Plus } from "lucide-react";
+import { useTranslations } from "next-intl"; // 1. Import hook
 
 interface Props {
   level: "Beginner" | "Intermediate" | "Advanced";
@@ -33,6 +27,8 @@ export default function GeneratePlanForm({
   error,
   onGenerate,
 }: Props) {
+  const t = useTranslations("PlanForm"); // 2. Initialize translations
+
   const suggestions = [
     "React",
     "Node.js",
@@ -45,15 +41,11 @@ export default function GeneratePlanForm({
   const MAX_HOURS = 12;
 
   const handleDecrease = () => {
-    if (timePerDay > MIN_HOURS) {
-      setTimePerDay(timePerDay - 1);
-    }
+    if (timePerDay > MIN_HOURS) setTimePerDay(timePerDay - 1);
   };
 
   const handleIncrease = () => {
-    if (timePerDay < MAX_HOURS) {
-      setTimePerDay(timePerDay + 1);
-    }
+    if (timePerDay < MAX_HOURS) setTimePerDay(timePerDay + 1);
   };
 
   return (
@@ -66,7 +58,7 @@ export default function GeneratePlanForm({
       <div className="flex items-center gap-3 mb-8">
         <Sparkles className="text-fuchsia-400" size={28} />
         <h2 className="text-2xl md:text-3xl font-semibold text-white tracking-tight">
-          AI Study Planner
+          {t("title")}
         </h2>
       </div>
 
@@ -78,10 +70,10 @@ export default function GeneratePlanForm({
       )}
 
       <div className="space-y-8">
-        {/* Level selector - mobile friendly */}
+        {/* Level selector */}
         <div>
           <label className="block text-xs uppercase font-medium text-violet-300 mb-3 tracking-widest">
-            Experience Level
+            {t("levelLabel")}
           </label>
           <div className="flex gap-2 overflow-x-auto pb-3 md:pb-0 scrollbar-hide snap-x snap-mandatory">
             {(["Beginner", "Intermediate", "Advanced"] as const).map((lvl) => (
@@ -94,7 +86,7 @@ export default function GeneratePlanForm({
                     : "bg-white/10 text-white hover:bg-white/20"
                 }`}
               >
-                {lvl}
+                {t(`levels.${lvl}`)}
               </button>
             ))}
           </div>
@@ -103,17 +95,16 @@ export default function GeneratePlanForm({
         {/* Skill input */}
         <div>
           <label className="block text-xs uppercase font-medium text-violet-300 mb-3 tracking-widest">
-            What do you want to learn?
+            {t("skillLabel")}
           </label>
           <input
             type="text"
             value={skill}
             onChange={(e) => setSkill(e.target.value)}
-            placeholder="e.g. Advanced Next.js patterns"
+            placeholder={t("placeholder")}
             className="w-full px-6 py-5 bg-white/10 border border-white/20 focus:border-violet-400 rounded-3xl text-white placeholder:text-violet-200/70 text-base focus:outline-none"
           />
 
-          {/* Quick chips - responsive wrap */}
           <div className="flex flex-wrap gap-2 mt-4">
             {suggestions.map((s) => (
               <button
@@ -127,19 +118,18 @@ export default function GeneratePlanForm({
           </div>
         </div>
 
-        {/* 🕒 Time per day (Modernized Stepper) */}
+        {/* Time per day */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <label className="block text-xs uppercase font-medium text-violet-300 tracking-widest">
-              Hours per day
+              {t("hoursLabel")}
             </label>
             <span className="text-xs text-violet-400/80 font-medium">
-              Adjust your daily study time easily
+              {t("hoursSubtitle")}
             </span>
           </div>
 
           <div className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-3xl p-4 md:p-6 backdrop-blur-md shadow-inner">
-            {/* Decrease Button */}
             <motion.button
               type="button"
               onClick={handleDecrease}
@@ -149,13 +139,12 @@ export default function GeneratePlanForm({
               className={`p-4 rounded-2xl flex items-center justify-center transition-all ${
                 timePerDay <= MIN_HOURS
                   ? "bg-white/5 text-white/20 cursor-not-allowed"
-                  : "bg-white/10 text-white hover:bg-white/20 hover:shadow-[0_0_15px_rgba(167,139,250,0.3)] border border-white/10"
+                  : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
               }`}
             >
               <Minus size={20} />
             </motion.button>
 
-            {/* Counter Output */}
             <div className="flex flex-col items-center justify-center min-w-24">
               <div className="flex items-baseline gap-1">
                 <AnimatePresence mode="popLayout">
@@ -173,11 +162,10 @@ export default function GeneratePlanForm({
                 <span className="text-violet-300 text-lg font-medium">h</span>
               </div>
               <span className="text-xs text-violet-400/60 font-medium mt-1">
-                daily
+                {t("daily")}
               </span>
             </div>
 
-            {/* Increase Button */}
             <motion.button
               type="button"
               onClick={handleIncrease}
@@ -187,7 +175,7 @@ export default function GeneratePlanForm({
               className={`p-4 rounded-2xl flex items-center justify-center transition-all ${
                 timePerDay >= MAX_HOURS
                   ? "bg-white/5 text-white/20 cursor-not-allowed"
-                  : "bg-white/10 text-white hover:bg-white/20 hover:shadow-[0_0_15px_rgba(232,121,249,0.3)] border border-white/10"
+                  : "bg-white/10 text-white hover:bg-white/20 border border-white/10"
               }`}
             >
               <Plus size={20} />
@@ -200,17 +188,17 @@ export default function GeneratePlanForm({
           whileTap={{ scale: 0.97 }}
           disabled={generating}
           onClick={onGenerate}
-          className="w-full h-14 flex items-center justify-center gap-2 bg-linear-to-r from-violet-400 to-fuchsia-400 rounded-3xl text-white font-semibold text-lg shadow-lg disabled:opacity-70"
+          className="w-full h-14 flex items-center justify-center gap-2 bg-linear-to-r from-violet-400 to-fuchsia-400 rounded-3xl text-white font-semibold text-lg shadow-lg disabled:opacity-70 transition-all"
         >
           {generating ? (
             <>
               <span className="h-5 w-5 animate-spin border-2 border-white border-t-transparent rounded-full" />
-              Generating...
+              {t("generating")}
             </>
           ) : (
             <>
               <Sparkles size={22} />
-              Generate My Plan
+              {t("generateBtn")}
               <PlusCircle size={22} />
             </>
           )}

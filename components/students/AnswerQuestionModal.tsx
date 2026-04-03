@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl"; // Import translations
 
 interface Question {
   id: string;
@@ -25,6 +26,7 @@ export default function AnswerQuestionModal({
   onClose,
   onSuccess,
 }: Props) {
+  const t = useTranslations("Questions"); // Use a Questions namespace
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +49,7 @@ export default function AnswerQuestionModal({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to submit answer");
+      if (!res.ok) throw new Error("Failed to submit");
 
       setIsSuccess(true);
       setTimeout(() => {
@@ -57,7 +59,7 @@ export default function AnswerQuestionModal({
         setIsSuccess(false);
       }, 1500);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setError(t("errorMessage"));
     } finally {
       setLoading(false);
     }
@@ -66,8 +68,7 @@ export default function AnswerQuestionModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -76,7 +77,6 @@ export default function AnswerQuestionModal({
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
           />
 
-          {/* Modal Content */}
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -89,11 +89,9 @@ export default function AnswerQuestionModal({
                   <CheckCircle2 size={40} />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Submitted!
+                  {t("successTitle")}
                 </h3>
-                <p className="text-slate-500">
-                  Your answer has been recorded successfully.
-                </p>
+                <p className="text-slate-500">{t("successDescription")}</p>
               </div>
             ) : (
               <>
@@ -102,7 +100,7 @@ export default function AnswerQuestionModal({
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white line-clamp-1">
                       {question.title}
                     </h3>
-                    <p className="text-xs text-slate-400">Class Task</p>
+                    <p className="text-xs text-slate-400">{t("taskLabel")}</p>
                   </div>
                   <button
                     onClick={onClose}
@@ -127,7 +125,7 @@ export default function AnswerQuestionModal({
                           className={`flex items-center gap-3 rounded-2xl border p-4 cursor-pointer transition-all ${
                             answer === option
                               ? "border-blue-500 bg-blue-50/50 ring-1 ring-blue-500"
-                              : "border-slate-200 hover:border-slate-300"
+                              : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
                           }`}
                         >
                           <input
@@ -149,8 +147,8 @@ export default function AnswerQuestionModal({
                       required
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
-                      placeholder="Type your answer here..."
-                      className="min-h-[150px] w-full rounded-2xl border border-slate-200 p-4 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800"
+                      placeholder={t("placeholder")}
+                      className="min-h-37.5 w-full rounded-2xl border border-slate-200 p-4 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     />
                   )}
 
@@ -165,20 +163,20 @@ export default function AnswerQuestionModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="flex-1 rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                      className="flex-1 rounded-2xl border border-slate-200 dark:border-slate-700 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                     >
-                      Cancel
+                      {t("cancel")}
                     </button>
                     <button
                       type="submit"
                       disabled={loading || !answer}
-                      className="flex-[2] flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200"
+                      className="flex-2 flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-200 dark:shadow-none"
                     >
                       {loading ? (
-                        "Submitting..."
+                        t("submitting")
                       ) : (
                         <>
-                          Submit Answer <Send size={16} />
+                          {t("submitBtn")} <Send size={16} />
                         </>
                       )}
                     </button>

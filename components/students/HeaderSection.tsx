@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { GraduationCap, BookOpen } from "lucide-react";
+import { useLocale } from "next-intl";
 
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileDropdown from "./ProfileDropdown";
@@ -23,25 +24,34 @@ interface Props {
 
 export default function HeaderSection({ studyPlanCount, onMenuToggle }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const currentLocale = useLocale();
 
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Blur page if dropdown OR modal is active
+  // 1. Language Toggle Logic
+  const toggleLanguage = (newLocale: string) => {
+    const newPath = pathname.replace(`/${currentLocale}`, `/${newLocale}`);
+    router.push(newPath);
+  };
+
+  // 2. The missing function that caused your error
+  const handleEditProfile = () => {
+    setDropdownOpen(false);
+    setModalOpen(true);
+  };
+
   useEffect(() => {
     onMenuToggle(dropdownOpen || modalOpen);
   }, [dropdownOpen, modalOpen, onMenuToggle]);
 
-  // Fetch current user
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
-
+        const res = await fetch("/api/auth/me", { credentials: "include" });
         if (res.ok) {
           const data: User = await res.json();
           setUser(data);
@@ -52,7 +62,6 @@ export default function HeaderSection({ studyPlanCount, onMenuToggle }: Props) {
         setLoadingUser(false);
       }
     };
-
     fetchUser();
   }, []);
 
@@ -62,30 +71,15 @@ export default function HeaderSection({ studyPlanCount, onMenuToggle }: Props) {
         method: "POST",
         credentials: "include",
       });
-
-      if (res.ok) {
-        router.push("/login");
-      } else {
-        alert("Logout failed. Please try again.");
-      }
+      if (res.ok) router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
-      alert("Something went wrong during logout.");
     }
-  };
-
-  const handleUserUpdated = (updatedUser: User) => {
-    setUser(updatedUser);
-  };
-
-  const handleEditProfile = () => {
-    setDropdownOpen(false); // Close dropdown so it doesn't overlap
-    setModalOpen(true);
   };
 
   return (
     <header className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/30 dark:border-slate-700/60 rounded-3xl px-5 py-5 md:px-8 shadow-sm">
-      {/* Left: Logo + Title */}
+      {/* Left Section */}
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 flex items-center justify-center bg-linear-to-br from-violet-500 to-fuchsia-500 text-white rounded-3xl shadow-inner">
           <GraduationCap size={24} strokeWidth={2.75} />
@@ -95,26 +89,54 @@ export default function HeaderSection({ studyPlanCount, onMenuToggle }: Props) {
             Student Hub
           </h1>
           <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">
-            Your learning dashboard
+            {currentLocale === "km"
+              ? "ផ្ទាំងគ្រប់គ្រងការសិក្សា"
+              : "Learning Dashboard"}
           </p>
         </div>
       </div>
 
-      {/* Right side */}
+      {/* Right Section */}
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        {/* All Plans Button */}
+        {/* Language Switcher */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => toggleLanguage("en")}
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+              currentLocale === "en"
+                ? "bg-white dark:bg-slate-700 text-violet-600 shadow-sm"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            EN
+          </button>
+          <button
+            onClick={() => toggleLanguage("km")}
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+              currentLocale === "km"
+                ? "bg-white dark:bg-slate-700 text-violet-600 shadow-sm"
+                : "text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            KM
+          </button>
+        </div>
+
+        {/* Plans Button */}
         <Link
-          href="/student/plans"
-          className="flex items-center gap-2 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-3 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:border-violet-300 transition-colors active:scale-95 flex-1 sm:flex-none justify-center sm:justify-start"
+          href={`/${currentLocale}/student/plans`}
+          className="flex items-center gap-2 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-5 py-3 text-sm font-semibold text-gray-700 dark:text-slate-200 hover:border-violet-300 transition-colors active:scale-95 flex-1 sm:flex-none justify-center"
         >
           <BookOpen size={18} />
-          <span className="hidden sm:inline">All Plans</span>
+          <span className="hidden sm:inline">
+            {currentLocale === "km" ? "ផែនការ" : "Plans"}
+          </span>
           <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-900 text-violet-600 dark:text-violet-300 text-xs font-bold">
             {studyPlanCount}
           </span>
         </Link>
 
-        {/* Profile Avatar + Dropdown */}
+        {/* Profile Section */}
         <div className="relative">
           <ProfileAvatar
             user={user}
@@ -132,12 +154,11 @@ export default function HeaderSection({ studyPlanCount, onMenuToggle }: Props) {
         </div>
       </div>
 
-      {/* Contextual Edit Profile Modal */}
       <EditProfileModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         user={user}
-        onUserUpdated={handleUserUpdated}
+        onUserUpdated={(u: User) => setUser(u)}
       />
     </header>
   );

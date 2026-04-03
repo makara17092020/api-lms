@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Loader2, Inbox } from "lucide-react";
+import { useTranslations } from "next-intl"; // Added
 import AnswerQuestionModal from "./AnswerQuestionModal";
 
 interface Question {
@@ -14,12 +15,12 @@ interface Question {
   answers?: any[];
 }
 
-// 1. Made classId optional (?) so it works on the Main Dashboard too
 interface QuestionsSectionProps {
   classId?: string;
 }
 
 export default function QuestionsSection({ classId }: QuestionsSectionProps) {
+  const t = useTranslations("Dashboard"); // Use Dashboard namespace
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
@@ -27,14 +28,9 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 2. Optimized Fetch Logic
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
     try {
-      /**
-       * If classId exists: Fetch questions for that specific class.
-       * If classId is missing: Fetch all pending questions for the student.
-       */
       const endpoint = classId
         ? `/api/questions?classId=${classId}`
         : "/api/questions?type=student";
@@ -43,7 +39,6 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
       const data = await res.json();
 
       if (Array.isArray(data)) {
-        // Filter out questions that already have answers from this student
         const unanswered = data.filter(
           (q: Question) => !q.answers || q.answers.length === 0,
         );
@@ -71,7 +66,7 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
       <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mb-4" />
         <p className="text-slate-500 font-medium animate-pulse">
-          Gathering your assignments...
+          {t("loadingQuestions")}
         </p>
       </div>
     );
@@ -89,10 +84,11 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {classId ? "Class Questions" : "Pending Tasks"}
+              {/* Dynamic Title based on context */}
+              {classId ? t("classQuestions") : t("pendingTasks")}
             </h2>
             <p className="text-sm text-slate-500">
-              {questions.length} items require your attention
+              {t("itemsAttention", { count: questions.length })}
             </p>
           </div>
         </div>
@@ -109,10 +105,10 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
             <Inbox size={32} className="text-slate-300" />
           </div>
           <p className="text-slate-900 dark:text-white font-semibold">
-            All caught up!
+            {t("allCaughtUp")}
           </p>
           <p className="text-sm text-slate-500 max-w-xs mx-auto mt-1">
-            You have answered all questions available at this time.
+            {t("noQuestions")}
           </p>
         </motion.div>
       ) : (
@@ -129,9 +125,9 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
-                    {question.type
-                      ? question.type.replace("_", " ")
-                      : "GENERAL"}
+                    {question.type === "MULTIPLE_CHOICE"
+                      ? t("typeMultipleChoice")
+                      : t("typeText")}
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
@@ -146,14 +142,13 @@ export default function QuestionsSection({ classId }: QuestionsSectionProps) {
                 onClick={() => handleAnswerClick(question)}
                 className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-100 dark:shadow-none transition-all active:scale-95"
               >
-                Answer Now
+                {t("answerNow")}
               </button>
             </motion.div>
           ))}
         </div>
       )}
 
-      {/* --- The Pop-up Modal --- */}
       {selectedQuestion && (
         <AnswerQuestionModal
           question={selectedQuestion}
