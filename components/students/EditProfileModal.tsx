@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl"; // Added for translation
 
 interface User {
   id: string;
@@ -24,6 +25,7 @@ export default function EditProfileModal({
   user,
   onUserUpdated,
 }: Props) {
+  const t = useTranslations("Profile"); // Using a "Profile" namespace
   const [name, setName] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -37,7 +39,6 @@ export default function EditProfileModal({
     }
   }, [isOpen, user]);
 
-  // Handle keyboard Accessibility
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -61,7 +62,6 @@ export default function EditProfileModal({
     if (!user || !name.trim()) return;
 
     setSaving(true);
-
     const formData = new FormData();
     formData.append("name", name);
     if (avatarFile) formData.append("image", avatarFile);
@@ -78,11 +78,11 @@ export default function EditProfileModal({
         onUserUpdated(updatedUser);
         onClose();
       } else {
-        alert("Failed to update profile. Please try again.");
+        alert(t("updateError"));
       }
     } catch (err) {
       console.error("Update profile error:", err);
-      alert("Something went wrong. Please check your connection.");
+      alert(t("connectionError"));
     } finally {
       setSaving(false);
     }
@@ -92,10 +92,7 @@ export default function EditProfileModal({
     <AnimatePresence>
       {isOpen && user && (
         <>
-          {/* Subtle Invisible Backdrop just to catch click-outside closures without darkening the header */}
           <div className="fixed inset-0 z-140" onClick={onClose} />
-
-          {/* Wrapper pins the modal to top-right under the avatar */}
           <div className="fixed inset-0 z-150 flex justify-end items-start pt-24 px-4 md:px-10 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -106,7 +103,7 @@ export default function EditProfileModal({
             >
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-4">
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                  Edit Profile
+                  {t("editTitle")}
                 </h2>
                 <button
                   onClick={onClose}
@@ -117,7 +114,6 @@ export default function EditProfileModal({
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                {/* Avatar Upload */}
                 <div className="flex flex-col items-center gap-2">
                   <div className="relative">
                     <div className="h-16 w-16 rounded-2xl border-2 border-white dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-md">
@@ -133,7 +129,6 @@ export default function EditProfileModal({
                         </div>
                       )}
                     </div>
-
                     <label className="absolute bottom-0 right-0 cursor-pointer flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 transition-colors">
                       <Upload size={14} />
                       <input
@@ -146,10 +141,9 @@ export default function EditProfileModal({
                   </div>
                 </div>
 
-                {/* Name Field */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                    Full Name
+                    {t("fullName")}
                   </label>
                   <input
                     type="text"
@@ -160,10 +154,9 @@ export default function EditProfileModal({
                   />
                 </div>
 
-                {/* Email (readonly) */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">
-                    Email Address
+                    {t("emailAddress")}
                   </label>
                   <input
                     type="email"
@@ -173,13 +166,12 @@ export default function EditProfileModal({
                   />
                 </div>
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={saving}
                   className="w-full py-3 bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl disabled:opacity-50 transition-all active:scale-[0.98] shadow-md shadow-indigo-600/20 text-sm"
                 >
-                  {saving ? "Saving changes..." : "Save Changes"}
+                  {saving ? t("saving") : t("saveBtn")}
                 </button>
               </form>
             </motion.div>

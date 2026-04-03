@@ -94,7 +94,26 @@
   "Dashboard": {
     "continueLearning": "Continue Learning",
     "totalClasses": "Total Classes",
-    "studyPlans": "Study Plans"
+    "studyPlans": "Study Plans",
+    "title": "Learning Dashboard",
+    "subtitle": "Your learning dashboard",
+    "backToDashboard": "Back to Dashboard",
+    "allPlans": "All Plans",
+    "pendingTasks": "Pending Tasks",
+    "classQuestions": "Class Questions",
+    "itemsAttention": "{count} items require your attention",
+    "allCaughtUp": "All caught up!",
+    "noQuestions": "You have answered all questions available at this time.",
+    "answerNow": "Answer Now",
+    "activeClasses": "Active Classes",
+    "classCount": "Classes",
+    "noClassesTitle": "No active classes",
+    "noClassesDescription": "Start learning by joining a class or waiting for your teacher 🚀",
+    "totalClassesLabel": "Total Classes",
+    "studyPlansLabel": "Study Plans",
+    "loadingQuestions": "Gathering your assignments...",
+    "typeMultipleChoice": "Multiple Choice",
+    "typeText": "Text Answer"
   },
   "Footer": {
     "description": "The modern platform for next-generation students and teachers.",
@@ -110,6 +129,43 @@
   "Questions": {
     "title": "Class Questions",
     "back": "Back to Dashboard",
-    "noQuestions": "No questions available for this class yet."
+    "noQuestions": "No questions available for this class yet.",
+    "taskLabel": "Class Task",
+    "placeholder": "Type your answer here...",
+    "cancel": "Cancel",
+    "submitBtn": "Submit Answer",
+    "submitting": "Submitting...",
+    "successTitle": "Submitted!",
+    "successDescription": "Your answer has been recorded successfully.",
+    "errorMessage": "Something went wrong. Please try again."
+  },
+  "Profile": {
+    "editTitle": "Edit Profile",
+    "fullName": "Full Name",
+    "emailAddress": "Email Address",
+    "saveBtn": "Save Changes",
+    "saving": "Saving changes...",
+    "updateError": "Failed to update profile. Please try again.",
+    "connectionError": "Something went wrong. Please check your connection.",
+    "avatarAriaLabel": "Open user menu",
+    "defaultAvatarAlt": "User profile picture",
+    "editProfile": "Edit Profile",
+    "logout": "Logout"
+  },
+  "PlanForm": {
+    "title": "AI Study Planner",
+    "levelLabel": "Experience Level",
+    "levels": {
+      "Beginner": "Beginner",
+      "Intermediate": "Intermediate",
+      "Advanced": "Advanced"
+    },
+    "skillLabel": "What do you want to learn?",
+    "placeholder": "e.g. Advanced Next.js patterns",
+    "hoursLabel": "Hours per day",
+    "hoursSubtitle": "Adjust your daily study time easily",
+    "daily": "daily",
+    "generateBtn": "Generate My Plan",
+    "generating": "Generating..."
   }
 }

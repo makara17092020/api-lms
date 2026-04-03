@@ -1,4 +1,3 @@
-// app/[locale]/layout.tsx — restore this
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -6,25 +5,23 @@ import Providers from "./providers";
 
 const locales = ["en", "km"];
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
+export default async function LocaleLayout(props: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
+  // 1. Await params properly for Next.js 16
+  const params = await props.params;
+  const locale = params.locale;
 
-  console.log("🔍 LOCALE:", locale);
-
+  // 2. Validate locale
   if (!locales.includes(locale)) {
     notFound();
   }
 
+  // 3. Load messages
   let messages;
   try {
     messages = await getMessages();
-    console.log("✅ messages loaded, keys:", Object.keys(messages).length);
   } catch (e) {
     console.error("❌ getMessages FAILED:", e);
     messages = {};
@@ -32,9 +29,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body>
+      {/* Next.js 16 requires <body> to be a direct child of <html> 
+          to avoid hydration mismatch errors.
+      */}
+      <body className="antialiased" suppressHydrationWarning>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Providers>{children}</Providers>
+          <Providers>{props.children}</Providers>
         </NextIntlClientProvider>
       </body>
     </html>
