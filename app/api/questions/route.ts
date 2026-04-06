@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// --- GET: Fetch questions based on role ---
 export async function GET(request: Request) {
   try {
     const session = await getServerSession();
@@ -15,13 +16,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "classId required" }, { status: 400 });
     }
 
+    // 1. Fetch user role to determine what data they can see
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { role: true },
     });
 
-    if (user?.role === "TEACHER") {
-      // Teachers can see all questions for their classes
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // 2. Permission Check
+    if (user.role === "TEACHER") {
       const classData = await prisma.class.findUnique({
         where: { id: classId },
         select: { teacherId: true },
@@ -29,8 +35,7 @@ export async function GET(request: Request) {
       if (!classData || classData.teacherId !== session.user.id) {
         return NextResponse.json({ error: "Access denied" }, { status: 403 });
       }
-    } else if (user?.role === "STUDENT") {
-      // Students can see questions for classes they're enrolled in
+    } else if (user.role === "STUDENT") {
       const enrollment = await prisma.enrollment.findUnique({
         where: {
           classId_studentId: { classId, studentId: session.user.id },
@@ -39,19 +44,26 @@ export async function GET(request: Request) {
       if (!enrollment) {
         return NextResponse.json({ error: "Not enrolled" }, { status: 403 });
       }
-    } else {
-      return NextResponse.json({ error: "Invalid role" }, { status: 403 });
     }
 
+    // 3. Fetch Questions with Conditional Answers
+    // Teachers get ALL answers + Student info
+    // Students only get their OWN answer ID (to check if they've finished)
     const questions = await prisma.question.findMany({
       where: { classId },
       include: {
-        answers: user?.role === "TEACHER" ? {
-          include: { student: { select: { name: true, email: true } } }
-        } : user?.role === "STUDENT" ? {
-          where: { studentId: session.user.id },
-          select: { id: true }
-        } : false,
+        answers: user.role === "TEACHER" 
+          ? {
+              include: { 
+                student: { 
+                  select: { name: true, email: true } 
+                } 
+              }
+            } 
+          : {
+              where: { studentId: session.user.id },
+              select: { id: true }
+            },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -59,76 +71,110 @@ export async function GET(request: Request) {
     return NextResponse.json(questions);
   } catch (error) {
     console.error("[QUESTIONS_GET_ERROR]", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
+// --- POST: Create a new question ---
 export async function POST(request: Request) {
   try {
     const session = await getServerSession();
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-    if (user?.role !== "TEACHER") {
-      return NextResponse.json(
-        { error: "Only teachers can create questions" },
-        { status: 403 },
-      );
-    }
-
     const { title, description, classId, type, options } = await request.json();
+    
     if (!title || !description || !classId) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    if (type === "MULTIPLE_CHOICE" && (!options || options.length < 2)) {
-      return NextResponse.json({ error: "Multiple choice questions need at least 2 options" }, { status: 400 });
-    }
-
     const classData = await prisma.class.findUnique({
       where: { id: classId },
-      select: { teacherId: true },
+      include: { teacher: true }
     });
 
     if (!classData || classData.teacherId !== session.user.id) {
-      return NextResponse.json(
-        { error: "You can only create questions for your own classes" },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Build data object; type/options are optional by schema support.
-    const newQuestionPayload: any = { title, description, classId };
-    if (type) newQuestionPayload.type = type;
-    if (options) newQuestionPayload.options = options;
+    const question = await prisma.question.create({
+      data: {
+        title,
+        description,
+        classId,
+        type: type || "TEXT",
+        options: type === "MULTIPLE_CHOICE" ? options : [],
+      },
+    });
 
-    try {
-      const question = await prisma.question.create({ data: newQuestionPayload });
-      return NextResponse.json(question, { status: 201 });
-    } catch (e: any) {
-      // If Prisma client schema doesn't have type/options, retry with simple payload.
-      const isPrismaValidationError = e?.code === "P2009" || e?.name === "PrismaClientValidationError" || e?.message?.includes("Unknown argument");
-      if (isPrismaValidationError) {
-        console.warn("QUESTION_CREATE_WARNING: retrying without type/options due to client validation error", e?.message);
-        const fallbackQuestion = await prisma.question.create({
-          data: { title, description, classId },
-        });
-        return NextResponse.json(fallbackQuestion, { status: 201 });
-      }
-      throw e;
-    }
+    return NextResponse.json(question, { status: 201 });
   } catch (error) {
     console.error("[QUESTION_CREATE_ERROR]", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// --- PUT: Update an existing question ---
+export async function PUT(request: Request) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await request.json();
+    const { id, title, description, type, options } = body;
+
+    const existingQuestion = await prisma.question.findUnique({
+      where: { id },
+      include: { class: true },
+    });
+
+    if (!existingQuestion || existingQuestion.class.teacherId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const updatedQuestion = await prisma.question.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        type: type || "TEXT",
+        options: type === "MULTIPLE_CHOICE" ? (options || []) : [],
+      },
+    });
+
+    return NextResponse.json(updatedQuestion);
+  } catch (error) {
+    console.error("[PUT_ERROR]", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// --- DELETE: Remove a question ---
+export async function DELETE(request: Request) {
+  try {
+    const session = await getServerSession();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+
+    const question = await prisma.question.findUnique({
+      where: { id },
+      include: { class: true },
+    });
+
+    if (!question || question.class.teacherId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    await prisma.question.delete({ where: { id } });
+    return NextResponse.json({ message: "Deleted" });
+  } catch (error) {
+    console.error("[DELETE_ERROR]", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
