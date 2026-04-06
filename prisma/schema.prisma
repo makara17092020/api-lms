@@ -4,6 +4,19 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Note: url is now managed in prisma.config.ts for Prisma 7+
+}
+
+enum Role {
+  SUPER_ADMIN
+  TEACHER
+  STUDENT
+}
+
+// 1. Added QuestionType enum for your new features
+enum QuestionType {
+  TEXT
+  MULTIPLE_CHOICE
 }
 
 model User {
@@ -95,13 +108,18 @@ model Result {
 }
 
 model Question {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
   description String
   classId     String
-  createdAt   DateTime @default(now())
+  
+  // 2. UPDATED: Added these fields so PUT/POST can save question details
+  type        QuestionType @default(TEXT)
+  options     String[]     
+  
+  createdAt   DateTime     @default(now())
   answers     Answer[]
-  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
 }
 
 model Answer {
@@ -136,10 +154,4 @@ model QuizQuestion {
   order         Int      @default(0)
   createdAt     DateTime @default(now())
   quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-}
-
-enum Role {
-  SUPER_ADMIN
-  TEACHER
-  STUDENT
 }
