@@ -1,18 +1,11 @@
-// prisma.config.ts
-import "dotenv/config"; // ← THIS WAS MISSING
+import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
-
-  migrations: {
-    path: "prisma/migrations",
-    seed: 'ts-node --compiler-options {"module":"CommonJS"} ./prisma/seed.ts',
-  },
-
-  // Use DIRECT_URL for Neon (recommended for db push / migrate)
-  // It avoids connection pooler issues during schema changes
+  
+  // This logic checks if you're in Docker or Local
   datasource: {
-    url: env("DIRECT_URL"), // ← Changed to DIRECT_URL
+    url: env("DIRECT_URL") || "postgresql://lms_user:lms_password@localhost:5435/lms_database?sslmode=disable",
   },
 });
