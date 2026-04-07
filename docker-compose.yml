@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: lms_password
       POSTGRES_DB: lms_database
     ports:
-      - "5435:5432" # Host:Container
+      - "5436:5432" # Host:Container
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
