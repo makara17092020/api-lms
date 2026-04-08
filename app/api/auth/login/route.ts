@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
-
+ 
     if (!user.password) {
       return NextResponse.json(
         { error: "This account is linked with Google. Please sign in with Google." },
