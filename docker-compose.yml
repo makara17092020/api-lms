@@ -11,9 +11,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "127.0.0.1:5436:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    # ADD THIS BLOCK BELOW
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -25,6 +22,10 @@ services:
   lms-app:
     build:
       context: .
+      # CRITICAL: This passes your .env values into the Dockerfile ARGs
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+        - DIRECT_URL=${DIRECT_URL}
     container_name: lms-nextjs-app
     restart: unless-stopped
     ports:
@@ -33,7 +34,7 @@ services:
       - .env
     depends_on:
       db:
-        condition: service_healthy # Now this works because the healthcheck is defined
+        condition: service_healthy
     networks:
       - lms-network
 
