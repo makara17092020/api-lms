@@ -3,30 +3,43 @@ services:
     image: postgres:15-alpine
     container_name: lms-postgres
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: lms_user
-      POSTGRES_PASSWORD: lms_password
-      POSTGRES_DB: lms_database
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5436:5432" # Host:Container
+      - "127.0.0.1:5436:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # ADD THIS BLOCK BELOW
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lms-network
 
   lms-app:
     build:
       context: .
-      args:
-        - DATABASE_URL=postgresql://lms_user:lms_password@db:5432/lms_database?sslmode=disable
-        - DIRECT_URL=postgresql://lms_user:lms_password@db:5432/lms_database?sslmode=disable
     container_name: lms-nextjs-app
+    restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
       - .env
-    environment:
-      DATABASE_URL: postgresql://lms_user:lms_password@db:5432/lms_database?sslmode=disable
     depends_on:
-      - db
+      db:
+        condition: service_healthy # Now this works because the healthcheck is defined
+    networks:
+      - lms-network
+
+networks:
+  lms-network:
+    driver: bridge
 
 volumes:
   postgres_data:
