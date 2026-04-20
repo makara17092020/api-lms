@@ -12,17 +12,26 @@ interface AddStudentModalProps {
   onSuccess: () => void | Promise<void>;
 }
 
-export default function AddStudentModal({ isOpen = true, cls, students, onClose, onSuccess }: AddStudentModalProps) {
+export default function AddStudentModal({
+  isOpen = true,
+  cls,
+  students,
+  onClose,
+  onSuccess,
+}: AddStudentModalProps) {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredStudents = useMemo(() => {
-    return students?.filter(student =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    return (
+      students?.filter(
+        (student) =>
+          student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          student.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      ) || []
+    );
   }, [students, searchTerm]);
 
   if (!isOpen) return null;
@@ -54,18 +63,18 @@ export default function AddStudentModal({ isOpen = true, cls, students, onClose,
   };
 
   const toggleStudent = (studentId: string) => {
-    setSelectedStudents(prev =>
+    setSelectedStudents((prev) =>
       prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId],
     );
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white">
+        <div className="bg-linear-to-r from-indigo-500 to-purple-600 p-6 text-white">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">Add Students</h2>
@@ -89,7 +98,10 @@ export default function AddStudentModal({ isOpen = true, cls, students, onClose,
 
           {/* Search */}
           <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Search students by name or email..."
@@ -116,20 +128,26 @@ export default function AddStudentModal({ isOpen = true, cls, students, onClose,
                         key={student.id}
                         onClick={() => toggleStudent(student.id)}
                         className={`p-4 cursor-pointer transition-colors hover:bg-gray-50 ${
-                          isSelected ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''
+                          isSelected
+                            ? "bg-indigo-50 border-l-4 border-indigo-500"
+                            : ""
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white ${
-                              isSelected
-                                ? 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                                : 'bg-gray-400'
-                            }`}>
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white ${
+                                isSelected
+                                  ? "bg-linear-to-r from-indigo-500 to-purple-500"
+                                  : "bg-gray-400"
+                              }`}
+                            >
                               {student.name?.[0]?.toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">{student.name}</p>
+                              <p className="font-medium text-gray-900">
+                                {student.name}
+                              </p>
                               <div className="flex items-center text-sm text-gray-500">
                                 <Mail size={14} className="mr-1" />
                                 {student.email}
@@ -153,7 +171,8 @@ export default function AddStudentModal({ isOpen = true, cls, students, onClose,
             {selectedStudents.length > 0 && (
               <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
                 <p className="text-sm text-indigo-700">
-                  <strong>{selectedStudents.length}</strong> student{selectedStudents.length !== 1 ? 's' : ''} selected
+                  <strong>{selectedStudents.length}</strong> student
+                  {selectedStudents.length !== 1 ? "s" : ""} selected
                 </p>
               </div>
             )}
@@ -162,7 +181,7 @@ export default function AddStudentModal({ isOpen = true, cls, students, onClose,
             <button
               type="submit"
               disabled={loading || selectedStudents.length === 0}
-              className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 rounded-xl font-medium transition-all disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 rounded-xl font-medium transition-all disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -172,7 +191,10 @@ export default function AddStudentModal({ isOpen = true, cls, students, onClose,
               ) : (
                 <>
                   <UserPlus size={20} />
-                  Add {selectedStudents.length > 0 ? `${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}` : 'Students'}
+                  Add{" "}
+                  {selectedStudents.length > 0
+                    ? `${selectedStudents.length} Student${selectedStudents.length !== 1 ? "s" : ""}`
+                    : "Students"}
                 </>
               )}
             </button>
