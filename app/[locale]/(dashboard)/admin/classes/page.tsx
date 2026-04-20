@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Search, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Sub-components
@@ -9,6 +9,7 @@ import ClassCard from "@/components/classes/ClassCard";
 import CreateClassModal from "@/components/classes/CreateClassModal";
 import EditClassModal from "@/components/classes/EditClassModal";
 import StudentManagementModal from "@/components/classes/StudentManagementModal";
+import DeleteClassModal from "@/components/classes/DeleteClassModal"; // The new one
 import LoadingSkeleton from "@/components/classes/LoadingSkeleton";
 import EmptyState from "@/components/classes/EmptyState";
 
@@ -30,18 +31,10 @@ export interface ClassModel {
   teacherId: string;
   teacher: Teacher;
   _count?: { enrollments: number };
-}
-
-export interface ClassModel {
-  id: string;
-  className: string;
-  teacherId: string;
-  teacher: Teacher;
-  _count?: { enrollments: number };
   enrollments?: {
     studentId: string;
     student: Student;
-  }[]; // Tell TypeScript that an array of enrollments exists!
+  }[];
 }
 
 export default function AdminClassesPage() {
@@ -57,6 +50,7 @@ export default function AdminClassesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassModel | null>(null);
   const [managingClass, setManagingClass] = useState<ClassModel | null>(null);
+  const [deletingClass, setDeletingClass] = useState<ClassModel | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -68,7 +62,7 @@ export default function AdminClassesPage() {
       const [teachersRes, studentsRes, classesRes] = await Promise.all([
         fetch("/api/users?role=TEACHER"),
         fetch("/api/users?role=STUDENT"),
-        fetch("/api/classes?type=teacher"), // Uses unified super-admin endpoint
+        fetch("/api/classes?type=teacher"),
       ]);
 
       const tData = await teachersRes.json();
@@ -85,7 +79,20 @@ export default function AdminClassesPage() {
     }
   };
 
-  // Client-side search filtration
+  const handleConfirmDelete = async () => {
+    if (!deletingClass) return;
+    try {
+      const res = await fetch(`/api/classes/${deletingClass.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await fetchInitialData();
+      }
+    } catch (err) {
+      console.error("Delete failed", err);
+    }
+  };
+
   const filteredClasses = useMemo(() => {
     return classes.filter(
       (cls) =>
@@ -103,8 +110,7 @@ export default function AdminClassesPage() {
             Class Workspace
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Deploy educational scopes, assign teachers, and track enrollment
-            metrics.
+            Deploy educational scopes and track enrollment.
           </p>
         </div>
         <motion.button
@@ -118,7 +124,7 @@ export default function AdminClassesPage() {
         </motion.button>
       </div>
 
-      {/* Global Search Mechanism & Aggregates */}
+      {/* Global Search Mechanism */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <div className="relative flex-1 max-w-sm">
           <Search
@@ -127,8 +133,8 @@ export default function AdminClassesPage() {
           />
           <input
             type="text"
-            placeholder="Search classes or instructors..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 focus:border-indigo-500 rounded-lg text-sm outline-none transition-all focus:bg-white"
+            placeholder="Search classes..."
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 focus:border-indigo-500 rounded-lg text-sm outline-none transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -139,7 +145,6 @@ export default function AdminClassesPage() {
         </div>
       </div>
 
-      {/* Primary Classes Content Grid with Dynamic Suspenses */}
       {loading ? (
         <LoadingSkeleton />
       ) : filteredClasses.length === 0 ? (
@@ -159,7 +164,8 @@ export default function AdminClassesPage() {
                 cls={cls}
                 onEdit={() => setEditingClass(cls)}
                 onManageStudents={() => setManagingClass(cls)}
-                onDelete={fetchInitialData}
+                onDelete={() => setDeletingClass(cls)} // Modern Popup Trigger
+                onRefresh={fetchInitialData} // For student unenrollment refresh
               />
             ))}
           </AnimatePresence>
@@ -168,7 +174,6 @@ export default function AdminClassesPage() {
 
       {/* --- State Modals --- */}
       <AnimatePresence>
-        {/* CREATE MODAL */}
         {isCreateOpen && (
           <CreateClassModal
             teachers={teachers}
@@ -177,23 +182,29 @@ export default function AdminClassesPage() {
           />
         )}
 
-        {/* EDIT MODAL - THIS WAS THE BUGGY PART */}
         {editingClass && (
           <EditClassModal
             cls={editingClass}
-            teachers={teachers} // Pass teachers, not students
+            teachers={teachers}
             onClose={() => setEditingClass(null)}
             onSuccess={fetchInitialData}
           />
         )}
 
-        {/* STUDENT MANAGEMENT MODAL */}
         {managingClass && (
           <StudentManagementModal
             cls={managingClass}
             students={students}
             onClose={() => setManagingClass(null)}
             onSuccess={fetchInitialData}
+          />
+        )}
+
+        {deletingClass && (
+          <DeleteClassModal
+            className={deletingClass.className}
+            onClose={() => setDeletingClass(null)}
+            onConfirm={handleConfirmDelete}
           />
         )}
       </AnimatePresence>

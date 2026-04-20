@@ -11,7 +11,6 @@ import {
   ChevronDown,
   X,
   Loader2,
-  Plus,
 } from "lucide-react";
 import { ClassModel } from "@/app/[locale]/(dashboard)/admin/classes/page";
 
@@ -19,7 +18,8 @@ interface ClassCardProps {
   cls: ClassModel;
   onEdit: () => void;
   onManageStudents: () => void;
-  onDelete: () => void;
+  onDelete: () => void; // This opens the delete modal
+  onRefresh: () => void; // To refresh student list after unenrollment
 }
 
 export default function ClassCard({
@@ -27,53 +27,26 @@ export default function ClassCard({
   onEdit,
   onManageStudents,
   onDelete,
+  onRefresh,
 }: ClassCardProps) {
   const [isStudentsExpanded, setIsStudentsExpanded] = useState(false);
   const [removingStudentId, setRemovingStudentId] = useState<string | null>(
     null,
   );
 
-  const handleDeleteClass = async () => {
-    if (
-      !confirm(
-        `Are you sure you want to delete the entire class "${cls.className}"?`,
-      )
-    )
-      return;
-
-    try {
-      const res = await fetch(`/api/classes/${cls.id}`, { method: "DELETE" });
-      if (res.ok) onDelete();
-    } catch (err) {
-      console.error("Deletion failed:", err);
-    }
-  };
-
   const handleRemoveStudent = async (
     studentId: string,
     studentName: string,
   ) => {
-    if (
-      !confirm(
-        `Unenroll ${studentName} from this class? This will not delete their account.`,
-      )
-    )
-      return;
+    // Keep this one simple confirm or it will be too many modals
+    if (!confirm(`Unenroll ${studentName} from this class?`)) return;
 
     setRemovingStudentId(studentId);
-
     try {
       const res = await fetch(`/api/classes/${cls.id}/students/${studentId}`, {
         method: "DELETE",
       });
-
-      if (res.ok) {
-        // We use the parent onDelete callback to refresh page data (fetchInitialData)
-        onDelete();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Failed to remove student");
-      }
+      if (res.ok) onRefresh();
     } catch (err) {
       console.error("Failed to unenroll student:", err);
     } finally {
@@ -84,13 +57,8 @@ export default function ClassCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.2 }}
-      className={`bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all ${
-        isStudentsExpanded ? "min-h-[22rem]" : "h-64"
+      className={`bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between hover:border-indigo-200 transition-all ${
+        isStudentsExpanded ? "min-h-88" : "h-64"
       }`}
     >
       <div>
@@ -106,7 +74,7 @@ export default function ClassCard({
               <Edit2 size={16} />
             </button>
             <button
-              onClick={handleDeleteClass}
+              onClick={onDelete}
               className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
             >
               <Trash2 size={16} />
@@ -125,7 +93,6 @@ export default function ClassCard({
       </div>
 
       <div className="mt-4 flex-1 flex flex-col justify-end">
-        {/* Accordion: Student Enrollments List */}
         <AnimatePresence>
           {isStudentsExpanded && (
             <motion.div
@@ -135,43 +102,32 @@ export default function ClassCard({
               className="overflow-hidden mb-4"
             >
               <div className="border-t border-gray-100 pt-3 mt-1 space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                <p className="text-[10px] uppercase font-bold text-gray-400">
                   Enrolled Students
                 </p>
-                {/* NOTE: Ensure your `/api/classes` query includes student context inside enrollments array!
-                 */}
-                {cls.enrollments && cls.enrollments.length > 0 ? (
-                  cls.enrollments.map((item: any) => (
-                    <div
-                      key={item.studentId}
-                      className="flex items-center justify-between bg-gray-50 p-2 rounded-lg text-xs"
+                {cls.enrollments?.map((item: any) => (
+                  <div
+                    key={item.studentId}
+                    className="flex items-center justify-between bg-gray-50 p-2 rounded-lg text-xs"
+                  >
+                    <span className="truncate text-gray-700">
+                      {item.student?.name}
+                    </span>
+                    <button
+                      disabled={removingStudentId === item.studentId}
+                      onClick={() =>
+                        handleRemoveStudent(item.studentId, item.student?.name)
+                      }
+                      className="text-gray-400 hover:text-red-500 transition-colors"
                     >
-                      <span className="truncate font-medium text-gray-700">
-                        {item.student?.name || "Unknown Student"}
-                      </span>
-                      <button
-                        disabled={removingStudentId === item.studentId}
-                        onClick={() =>
-                          handleRemoveStudent(
-                            item.studentId,
-                            item.student?.name,
-                          )
-                        }
-                        className="text-gray-400 hover:text-red-500 p-1 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50"
-                      >
-                        {removingStudentId === item.studentId ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <X size={14} />
-                        )}
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400 italic">
-                    No students yet.
-                  </p>
-                )}
+                      {removingStudentId === item.studentId ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <X size={14} />
+                      )}
+                    </button>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
@@ -180,29 +136,21 @@ export default function ClassCard({
         <div className="flex items-center justify-between border-t border-gray-100 pt-4">
           <button
             onClick={() => setIsStudentsExpanded((prev) => !prev)}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors"
+            className="flex items-center gap-1.5 text-xs text-gray-500 font-medium"
           >
-            <GraduationCap size={16} className="text-gray-400" />
+            <GraduationCap size={16} />
             <span>{cls._count?.enrollments || 0} students</span>
-            <motion.div
-              animate={{ rotate: isStudentsExpanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div animate={{ rotate: isStudentsExpanded ? 180 : 0 }}>
               <ChevronDown size={14} />
             </motion.div>
           </button>
-
-          <div className="flex gap-2">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onManageStudents}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
-            >
-              <UserPlus size={16} />
-              Manage Students
-            </motion.button>
-          </div>
+          <button
+            onClick={onManageStudents}
+            className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700"
+          >
+            <UserPlus size={16} />
+            Manage
+          </button>
         </div>
       </div>
     </motion.div>
