@@ -4,41 +4,41 @@ import { prisma } from "../lib/prisma";
 import bcrypt from "bcryptjs";
 
 async function main() {
-  const adminEmail = process.env.SUPER_ADMIN_EMAIL;
-  const adminPassword = process.env.SUPER_ADMIN_PASSWORD;
+  const adminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@ailms.com";
+  const adminPassword = process.env.SUPER_ADMIN_PASSWORD || "admin@ailms.com";
 
-  if (!adminEmail || !adminPassword) {
-    console.error(
-      "Skipping Admin Seed: SUPER_ADMIN_EMAIL or SUPER_ADMIN_PASSWORD missing in .env",
-    );
-    return;
-  }
+  console.log(`🚀 Starting seed process for: ${adminEmail}`);
 
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
+  // Use bcrypt to match your Auth.js / login logic
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+  const admin = await prisma.user.upsert({
+    where: {
+      email: adminEmail,
+    },
+    update: {
+      // If user exists, force these values to be correct
+      password: hashedPassword,
+      role: "SUPER_ADMIN",
+      name: "Super Admin",
+    },
+    create: {
+      // If user doesn't exist, create them
+      email: adminEmail,
+      name: "Super Admin",
+      password: hashedPassword,
+      role: "SUPER_ADMIN",
+    },
   });
 
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-    await prisma.user.create({
-      data: {
-        name: "Super Admin",
-        email: adminEmail,
-        password: hashedPassword,
-        role: "SUPER_ADMIN",
-      },
-    });
-
-    console.log("Super Admin user seeded successfully!");
-  } else {
-    console.log("Super Admin user already exists, skipping seed.");
-  }
+  console.log("✅ Admin user processed successfully:");
+  console.log(`   - Email: ${admin.email}`);
+  console.log(`   - Role: ${admin.role}`);
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seeding error:", e);
     process.exit(1);
   })
   .finally(async () => {
