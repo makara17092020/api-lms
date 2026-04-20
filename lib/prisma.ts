@@ -1,23 +1,25 @@
 import { PrismaClient } from "@prisma/client";
-
-// === CHANGE THIS LINE TO MATCH YOUR ADAPTER ===
-import { PrismaPg } from "@prisma/adapter-pg"; // PostgreSQL
-// import { PrismaMySql } from '@prisma/adapter-mysql'   // MySQL
-// import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'   // SQLite
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg"; // Use pg instead of just a string
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// === CREATE THE ADAPTER ===
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
+// Create a connection pool that handles the SSL error
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // This is the secret fix for Render!
+  },
 });
-// const adapter = new PrismaMySql({ connectionString: process.env.DATABASE_URL! })
-// const adapter = new PrismaBetterSqlite3({ connectionString: process.env.DATABASE_URL! })
+
+const adapter = new PrismaPg(pool);
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter, // ← this is the Prisma 7 way
+    adapter,
   });
+
+if (process.env.NODE_VERSION !== "production") globalForPrisma.prisma = prisma;
