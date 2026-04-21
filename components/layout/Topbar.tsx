@@ -5,12 +5,12 @@ import {
   LogOut,
   Bell,
   Loader2,
-  Zap,
   User,
   Camera,
   X,
-  Check,
   ChevronDown,
+  UserPlus,
+  BookOpen,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LogoutModal from "@/components/users/LogoutModal";
@@ -21,28 +21,37 @@ interface UserProfile {
   image: string | null;
 }
 
+interface NotificationItem {
+  id: string;
+  type: "PLAN" | "USER";
+  message: string;
+  time: string;
+  link: string;
+}
+
 export default function Topbar({ title = "Dashboard" }: { title?: string }) {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Profile Data State
+  // --- YOUR ORIGINAL PROFILE STATES ---
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // UI Toggle States
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
-
-  // Edit Form State
   const [editName, setEditName] = useState("");
   const [editImage, setEditImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // --- NOTIFICATION STATES ---
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // --- YOUR ORIGINAL FETCH PROFILE LOGIC ---
   const fetchProfile = async () => {
     try {
       const res = await fetch("/api/auth/me");
@@ -57,8 +66,53 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
     }
   };
 
+  // --- NOTIFICATION FETCH & CLEAR LOGIC ---
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/admin/notifications");
+      const data = await res.json();
+      const allItems: NotificationItem[] = data.notifications || data; // Handle both array or wrapped object
+
+      const lastCleared = localStorage.getItem("notif_clear_timestamp");
+      const clearTime = lastCleared ? new Date(lastCleared).getTime() : 0;
+
+      // Only show items that are NEWER than the last time admin cleared them
+      const freshItems = Array.isArray(allItems)
+        ? allItems.filter((item) => new Date(item.time).getTime() > clearTime)
+        : [];
+
+      setNotifications(freshItems);
+      setUnreadCount(freshItems.length);
+    } catch (error) {
+      console.error("Notifications fetch error:", error);
+    }
+  };
+
+  const clearNotificationBadge = () => {
+    const now = new Date().toISOString();
+    localStorage.setItem("notif_clear_timestamp", now);
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
+  const handleBellClick = () => {
+    if (showNotifications) {
+      clearNotificationBadge(); // Clear when the menu is closed
+    }
+    setShowNotifications(!showNotifications);
+  };
+
+  const handleNotificationClick = (link: string) => {
+    clearNotificationBadge(); // Clear when clicking a specific item
+    setShowNotifications(false);
+    router.push(link);
+  };
+
   useEffect(() => {
     fetchProfile();
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   // Handle outside clicks
@@ -68,6 +122,7 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
+        if (showNotifications) clearNotificationBadge();
         setShowNotifications(false);
       }
       if (
@@ -79,27 +134,23 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [showNotifications]);
 
-  // --- LOGOUT LOGIC ---
+  // --- YOUR ORIGINAL ACTIONS ---
   const handleConfirmLogout = async () => {
     setLogoutLoading(true);
     try {
-      // This hits your actual backend route to clear the cookie/token
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
         setIsLogoutOpen(false);
         router.push("/");
         router.refresh();
       }
-    } catch (error) {
-      console.error("Logout failed:", error);
     } finally {
       setLogoutLoading(false);
     }
   };
 
-  // --- UPDATE PROFILE LOGIC ---
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -107,19 +158,15 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
       const formData = new FormData();
       formData.append("name", editName);
       if (editImage) formData.append("image", editImage);
-
       const res = await fetch("/api/auth/me", {
         method: "PUT",
         body: formData,
       });
-
       if (res.ok) {
         await fetchProfile();
         setIsEditModalOpen(false);
         setPreviewUrl(null);
       }
-    } catch (error) {
-      console.error("Update failed", error);
     } finally {
       setIsSaving(false);
     }
@@ -128,21 +175,66 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
   return (
     <>
       <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 lg:px-10 sticky top-0 z-50 shadow-sm">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
-            {title}
-          </h1>
-        </div>
+        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+          {title}
+        </h1>
 
         <div className="flex items-center gap-4">
           {/* Notifications Button */}
           <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-2xl transition-all"
+              onClick={handleBellClick}
+              className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-2xl transition-all relative"
             >
               <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
             </button>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-100 shadow-xl rounded-2xl py-2 z-60 animate-in fade-in slide-in-from-top-2">
+                <div className="px-4 py-2 border-b border-gray-50">
+                  <h3 className="font-bold text-gray-900 text-sm">
+                    New Activity
+                  </h3>
+                </div>
+                <div className="max-h-100 overflow-y-auto">
+                  {notifications.length > 0 ? (
+                    notifications.map((n) => (
+                      <button
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n.link)}
+                        className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex gap-3 border-b border-gray-50 last:border-0"
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${n.type === "USER" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"}`}
+                        >
+                          {n.type === "USER" ? (
+                            <UserPlus size={16} />
+                          ) : (
+                            <BookOpen size={16} />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-800 font-medium leading-tight">
+                            {n.message}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1">New</p>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-gray-400 text-xs">
+                      No new notifications
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="h-6 w-px bg-gray-200" />
@@ -173,13 +265,12 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
               </div>
               <ChevronDown
                 size={14}
-                className={`text-gray-400 transition-transform duration-200 ${showProfileMenu ? "rotate-180" : ""}`}
+                className={`text-gray-400 transition-transform ${showProfileMenu ? "rotate-180" : ""}`}
               />
             </button>
 
-            {/* Profile Dropdown Menu */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 shadow-xl rounded-2xl py-2 z-60 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 shadow-xl rounded-2xl py-2 z-60">
                 <button
                   onClick={() => {
                     setIsEditModalOpen(true);
@@ -228,7 +319,6 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
                 <X size={20} />
               </button>
             </div>
-
             <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative group">
@@ -259,7 +349,6 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
                   </label>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-500 uppercase">
                   Display Name
@@ -272,7 +361,6 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
                   required
                 />
               </div>
-
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
