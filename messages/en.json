@@ -167,5 +167,22 @@
     "daily": "daily",
     "generateBtn": "Generate My Plan",
     "generating": "Generating..."
+  },
+  "About": {
+    "title": "Empowering the Next Generation",
+    "description": "We combine cutting-edge AI technology with modern pedagogical methods to create a truly personalized learning experience.",
+    "aiDriven": "AI-Driven",
+    "aiDesc": "Our systems adjust to your unique learning pace.",
+    "community": "Community",
+    "communityDesc": "Join thousands of students learning together.",
+    "results": "Results",
+    "resultsDesc": "Skills that prepare you for the global market."
+  },
+  "Contact": {
+    "getInTouch": "Get in Touch",
+    "contactText": "Have questions about our AI courses? Reach out to us.",
+    "name": "Full Name",
+    "message": "How can we help?",
+    "sendButton": "Send Message"
   }
 }
