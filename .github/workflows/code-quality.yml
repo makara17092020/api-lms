@@ -1,0 +1,50 @@
+name: Code Quality & Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Check for console.logs
+        run: |
+          echo "Searching for debug console statements..."
+          if grep -r "console\.\(log\|warn\|error\)" --include="*.ts" --include="*.tsx" src app lib util 2>/dev/null | grep -v "node_modules" | grep -v ".next"; then
+            echo "Warning: Found console statements that should be removed"
+          fi
+        continue-on-error: true
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Check outdated dependencies
+        run: npm outdated || true
