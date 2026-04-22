@@ -79,7 +79,11 @@ export default function AdminStudyPlansPage() {
         />
 
         {/* 📊 The table automatically filters because it watches `filteredStudents` */}
-        <StudyPlannerTable students={filteredStudents} loading={loading} />
+        <StudyPlannerTable
+          students={filteredStudents}
+          loading={loading}
+          role={"admin"}
+        />
       </div>
     </div>
   );

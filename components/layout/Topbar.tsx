@@ -35,7 +35,10 @@ interface TopbarProps {
   leftContent?: React.ReactNode; // 🟢 Added this to receive the hamburger button
 }
 
-export default function Topbar({ title = "Dashboard", leftContent }: TopbarProps) {
+export default function Topbar({
+  title = "Dashboard",
+  leftContent,
+}: TopbarProps) {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -77,7 +80,7 @@ export default function Topbar({ title = "Dashboard", leftContent }: TopbarProps
     try {
       const res = await fetch("/api/admin/notifications");
       const data = await res.json();
-      const allItems: NotificationItem[] = data.notifications || data; 
+      const allItems: NotificationItem[] = data.notifications || data;
 
       const lastCleared = localStorage.getItem("notif_clear_timestamp");
       const clearTime = lastCleared ? new Date(lastCleared).getTime() : 0;
@@ -183,7 +186,7 @@ export default function Topbar({ title = "Dashboard", leftContent }: TopbarProps
         <div className="flex items-center">
           {/* 🟢 Render Hamburger button here if it exists */}
           {leftContent}
-          
+
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
             {title}
           </h1>
@@ -317,12 +320,10 @@ export default function Topbar({ title = "Dashboard", leftContent }: TopbarProps
 
       {/* --- IN-PAGE EDIT MODAL --- */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h2 className="text-xl font-bold text-gray-900">
-                Edit Profile
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">Edit Profile</h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600"

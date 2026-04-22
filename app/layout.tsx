@@ -6,6 +6,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Do NOT include <html> or <body> tags here
+  // Return children WITHOUT html/body tags to avoid nesting
   return children;
 }

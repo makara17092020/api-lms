@@ -27,16 +27,24 @@ interface StudyPlannerTableProps {
   students: StudentProgress[];
   loading: boolean;
   itemsPerPage?: number;
+  role: "teacher" | "admin"; // 👈 Added role prop
 }
 
 export default function StudyPlannerTable({
   students,
   loading,
-  itemsPerPage = 6, // 🚀 Default pagination rate
+  itemsPerPage = 6,
+  role, // 👈 Destructure role
 }: StudyPlannerTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 📐 Client-side Pagination Metrics
+  // 🛠️ Helper to generate the correct URL based on role
+  const getProfileLink = (studentId: string) => {
+    return role === "teacher"
+      ? `/en/teacher/plans/${studentId}`
+      : `/en/admin/study-plans/${studentId}`;
+  };
+
   const totalPages = Math.ceil(students.length / itemsPerPage);
   const currentStudents = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -49,7 +57,6 @@ export default function StudyPlannerTable({
     }
   };
 
-  // 🎨 Dynamic color state generator based on task completeness
   const getProgressColor = (percent: number) => {
     if (percent === 100) return "bg-emerald-500";
     if (percent >= 50) return "bg-gradient-to-r from-indigo-500 to-fuchsia-500";
@@ -64,7 +71,6 @@ export default function StudyPlannerTable({
     return "text-rose-500";
   };
 
-  // ⏳ Shimmer Loading Skeleton State
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -88,7 +94,6 @@ export default function StudyPlannerTable({
     );
   }
 
-  // 🔍 Animated Zero Results Empty UI State
   if (students.length === 0) {
     return (
       <motion.div
@@ -111,9 +116,7 @@ export default function StudyPlannerTable({
 
   return (
     <div className="space-y-6">
-      {/* 📱 Mobile Card Layout & 🖥️ Desktop Fluid Table in ONE */}
       <div className="bg-white dark:bg-slate-900 md:border md:border-slate-200 md:dark:border-slate-800 rounded-3xl overflow-hidden shadow-md">
-        {/* 💻 Desktop View (Hidden on Mobile) */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -212,7 +215,7 @@ export default function StudyPlannerTable({
 
                       <td className="px-6 py-4 text-right">
                         <Link
-                          href={`/admin/study-plans/${student.id}`}
+                          href={getProfileLink(student.id)} // 👈 Dynamically set link
                           className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 hover:text-white hover:bg-indigo-600 font-bold text-xs rounded-xl transition-all shadow-sm active:scale-95"
                         >
                           <UserCheck size={14} />
@@ -227,7 +230,6 @@ export default function StudyPlannerTable({
           </table>
         </div>
 
-        {/* 📱 Mobile UI (Grid of Cards) */}
         <div className="md:hidden grid grid-cols-1 gap-4 p-4">
           <AnimatePresence mode="wait">
             {currentStudents.map((student) => {
@@ -296,7 +298,7 @@ export default function StudyPlannerTable({
                   </div>
 
                   <Link
-                    href={`/admin/study-plans/${student.id}`}
+                    href={getProfileLink(student.id)} // 👈 Dynamically set link
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 text-indigo-600 dark:text-indigo-400 hover:text-white hover:bg-indigo-600 font-bold text-xs rounded-xl transition-all"
                   >
                     <UserCheck size={14} />
@@ -309,7 +311,6 @@ export default function StudyPlannerTable({
         </div>
       </div>
 
-      {/* 📊 Smooth Pagination Feature & Animated Controllers */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4">
           <span className="text-xs font-bold text-slate-500">
@@ -331,7 +332,6 @@ export default function StudyPlannerTable({
               <ChevronLeft size={18} />
             </button>
 
-            {/* Pagination Numbers and Dynamic Mapping */}
             <div className="flex items-center gap-1.5">
               {[...Array(totalPages)].map((_, idx) => {
                 const pageNum = idx + 1;

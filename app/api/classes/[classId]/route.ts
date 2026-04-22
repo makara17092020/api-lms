@@ -51,13 +51,12 @@ async function verifyOwnership(classId: string) {
 }
 
 /**
- * PUT: Update Class Name and/or Instructor
+ * UPDATED PUT: Handle Class Updates AND Student Unenrollment
  */
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ classId: string }> },
 ) {
-  // Next.js 15 requires awaiting params
   const { classId } = await params;
 
   const verification = await verifyOwnership(classId);
@@ -69,13 +68,18 @@ export async function PUT(
   }
 
   try {
-    const { className, teacherId } = await req.json();
+    const body = await req.json();
+    const { className, teacherId, removeStudentId } = body;
 
+    // --- FIX: Use your existing unenrollStudent method ---
+    if (removeStudentId) {
+      await ClassService.unenrollStudent(classId, removeStudentId);
+      return NextResponse.json({ message: "Student unenrolled successfully" });
+    }
+
+    // Standard Class Update
     if (!className || !teacherId) {
-      return NextResponse.json(
-        { error: "Missing required fields: className and teacherId" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
     const updated = await ClassService.updateClass(
@@ -85,8 +89,11 @@ export async function PUT(
     );
     return NextResponse.json(updated);
   } catch (err) {
-    console.error("Update Operation Failed:", err);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    console.error("Operation Failed:", err);
+    return NextResponse.json(
+      { error: "Failed to process request" },
+      { status: 500 },
+    );
   }
 }
 
