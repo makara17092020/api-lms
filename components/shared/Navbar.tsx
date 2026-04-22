@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { ChangeEvent, useTransition, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Globe } from "lucide-react"; // Added Globe icon for a nice touch
 
 export default function Navbar() {
   const t = useTranslations("Navbar");
@@ -20,10 +20,13 @@ export default function Navbar() {
   const userRole = "student";
   const initial = userName.charAt(0).toUpperCase();
 
-  // Handle Language Switching seamlessly
   const switchLanguage = (e: ChangeEvent<HTMLSelectElement>) => {
     const nextLocale = e.target.value;
-    const newPath = pathname.replace(`/${locale}`, `/${nextLocale}`);
+    // Improved path replacement logic to ensure it only replaces the first segment
+    const segments = pathname.split("/");
+    segments[1] = nextLocale;
+    const newPath = segments.join("/");
+
     startTransition(() => {
       router.replace(newPath);
     });
@@ -48,34 +51,48 @@ export default function Navbar() {
 
           {/* Right side - Desktop Auth / User / Lang */}
           <div className="hidden md:flex items-center gap-x-4">
-            {/* Language Switcher */}
-            <select
-              defaultValue={locale}
-              onChange={switchLanguage}
-              disabled={isPending}
-              className="text-sm font-medium text-zinc-600 bg-transparent border border-zinc-200 rounded-xl px-2 py-1 outline-none focus:border-indigo-500 hover:border-zinc-300 transition-colors cursor-pointer"
-            >
-              <option value="en">EN</option>
-              <option value="km">KM</option>
-            </select>
+            {/* Language Switcher with Flags */}
+            <div className="relative flex items-center gap-x-2">
+              <select
+                defaultValue={locale}
+                onChange={switchLanguage}
+                disabled={isPending}
+                className="appearance-none text-sm font-medium text-zinc-600 bg-white border border-zinc-200 rounded-xl pl-3 pr-8 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 hover:border-zinc-300 transition-all cursor-pointer shadow-sm"
+              >
+                <option value="en">🇺🇸 English</option>
+                <option value="km">🇰🇭 KHMER</option>
+              </select>
+              {/* Custom Chevron for the select */}
+              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+                <svg
+                  className="h-4 w-4 text-zinc-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
 
             <div className="w-px h-6 bg-zinc-200 mx-1" />
 
             {isLoggedIn ? (
               <>
-                {/* User Info */}
                 <div className="flex items-center gap-x-3">
                   <div className="h-8 w-8 rounded-2xl bg-linear-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-sm font-semibold shadow-inner">
                     {initial}
                   </div>
-                  <div>
-                    <span className="text-sm font-medium text-zinc-700">
-                      {t("hi")}, {userName}
-                    </span>
-                  </div>
+                  <span className="text-sm font-medium text-zinc-700">
+                    {t("hi")}, {userName}
+                  </span>
                 </div>
 
-                {/* Dashboard Link */}
                 <Link
                   href={`/${locale}/dashboard/${userRole}`}
                   className="text-sm font-medium px-5 py-2 rounded-3xl border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-all"
@@ -87,7 +104,6 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                {/* Sign In */}
                 <Link
                   href={`/${locale}/login`}
                   className="text-sm font-medium text-zinc-600 hover:text-zinc-900 px-5 py-2 transition-colors"
@@ -95,7 +111,6 @@ export default function Navbar() {
                   {t("signIn")}
                 </Link>
 
-                {/* Get Started */}
                 <Link
                   href={`/${locale}/register`}
                   className="group inline-flex items-center justify-center h-10 px-6 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 rounded-3xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 transition-all hover:scale-105 active:scale-95"
@@ -106,7 +121,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Toggle Button */}
+          {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -125,9 +140,12 @@ export default function Navbar() {
 
       {/* Mobile Dropdown Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-zinc-100 shadow-lg pb-6 pt-4 px-6 flex flex-col gap-y-4">
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-zinc-100 shadow-xl pb-8 pt-4 px-6 flex flex-col gap-y-4 animate-in slide-in-from-top duration-200">
           <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
-            <span className="text-sm font-medium text-zinc-600">Language</span>
+            <div className="flex items-center gap-x-2 text-zinc-600">
+              <Globe className="w-4 h-4" />
+              <span className="text-sm font-medium">Language</span>
+            </div>
             <select
               defaultValue={locale}
               onChange={(e) => {
@@ -135,10 +153,10 @@ export default function Navbar() {
                 closeMenu();
               }}
               disabled={isPending}
-              className="text-sm font-medium text-zinc-600 bg-transparent border border-zinc-200 rounded-xl px-3 py-1.5 outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+              className="text-sm font-medium text-zinc-700 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors cursor-pointer"
             >
-              <option value="en">English</option>
-              <option value="km">Khmer</option>
+              <option value="en">🇺🇸 English</option>
+              <option value="km">🇰🇭 ភាសាខ្មែរ (Khmer)</option>
             </select>
           </div>
 
@@ -152,7 +170,6 @@ export default function Navbar() {
                   {t("hi")}, {userName}
                 </span>
               </div>
-
               <Link
                 href={`/${locale}/dashboard/${userRole}`}
                 onClick={closeMenu}
@@ -160,7 +177,7 @@ export default function Navbar() {
               >
                 {t("dashboard")}
               </Link>
-              <div onClick={closeMenu}>
+              <div onClick={closeMenu} className="pt-2">
                 <LogoutButton />
               </div>
             </>
@@ -173,7 +190,6 @@ export default function Navbar() {
               >
                 {t("signIn")}
               </Link>
-
               <Link
                 href={`/${locale}/register`}
                 onClick={closeMenu}

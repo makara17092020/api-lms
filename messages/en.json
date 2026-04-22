@@ -180,9 +180,23 @@
   },
   "Contact": {
     "getInTouch": "Get in Touch",
-    "contactText": "Have questions about our AI courses? Reach out to us.",
+    "contactText": "Have questions about our AI-powered courses? Our team is here to help you navigate your learning journey.",
+    "hereToHelp": "We're here to help",
+    "repliesWithin": "Typically replies within 24 hours",
     "name": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "office": "Office",
+    "location": "Phnom Penh, Cambodia",
+    "connect": "Connect with us",
+    "subject": "Subject",
+    "subjectPlaceholder": "Select a topic...",
+    "generalInquiry": "General Inquiry",
+    "technicalSupport": "Technical Support",
+    "partnership": "Partnership",
+    "feedback": "Feedback",
     "message": "How can we help?",
-    "sendButton": "Send Message"
+    "sendButton": "Send Message",
+    "disclaimer": "Your data is never shared with third parties."
   }
 }

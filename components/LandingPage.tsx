@@ -230,26 +230,26 @@ export default function LandingPage() {
     },
   ];
 
-  const TESTIMONIALS = [
-    {
-      name: "Sophea Keo",
-      role: t("test1Role"),
-      text: t("test1Text"),
-      stars: 5,
-    },
-    {
-      name: "Mr. Dara Heng",
-      role: t("test2Role"),
-      text: t("test2Text"),
-      stars: 5,
-    },
-    {
-      name: "Bopha Lim",
-      role: t("test3Role"),
-      text: t("test3Text"),
-      stars: 5,
-    },
-  ];
+  // const TESTIMONIALS = [
+  //   {
+  //     name: "Sophea Keo",
+  //     role: t("test1Role"),
+  //     text: t("test1Text"),
+  //     stars: 5,
+  //   },
+  //   {
+  //     name: "Mr. Dara Heng",
+  //     role: t("test2Role"),
+  //     text: t("test2Text"),
+  //     stars: 5,
+  //   },
+  //   {
+  //     name: "Bopha Lim",
+  //     role: t("test3Role"),
+  //     text: t("test3Text"),
+  //     stars: 5,
+  //   },
+  // ];
 
   return (
     <div className="min-h-screen bg-zinc-50 scroll-smooth">
@@ -288,7 +288,7 @@ export default function LandingPage() {
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tighter leading-none text-zinc-900">
                   {t("heroTitle1")}
                 </h1>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tighter leading-none bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 bg-clip-text text-transparent">
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tighter leading-none bg-linear-to-r from-indigo-600 via-violet-600 to-blue-600 bg-clip-text text-transparent">
                   {t("heroTitle2")}
                 </h1>
               </motion.div>
@@ -312,7 +312,7 @@ export default function LandingPage() {
                 >
                   <Link
                     href="/register"
-                    className="group inline-flex h-13 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-8 font-semibold text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300"
+                    className="group inline-flex h-13 items-center justify-center gap-2.5 rounded-2xl bg-linear-to-r from-indigo-600 to-violet-600 px-8 font-semibold text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300"
                     style={{ height: "52px" }}
                   >
                     {t("startLearningFree")}
@@ -336,7 +336,7 @@ export default function LandingPage() {
               </motion.div>
 
               {/* Trust signals */}
-              <motion.div
+              {/* <motion.div
                 variants={fadeUp}
                 className="flex items-center gap-6 text-sm text-zinc-500 pt-2"
               >
@@ -360,7 +360,7 @@ export default function LandingPage() {
                   <Star className="h-3.5 w-3.5 fill-current" />
                   4.9 / 5.0
                 </div>
-              </motion.div>
+              </motion.div> */}
             </motion.div>
 
             {/* Right — Mockup */}
@@ -392,7 +392,7 @@ export default function LandingPage() {
           <motion.div
             animate={{ y: [0, 6, 0] }}
             transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-            className="h-8 w-0.5 rounded-full bg-gradient-to-b from-zinc-300 to-transparent"
+            className="h-8 w-0.5 rounded-full bg-linear-to-b from-zinc-300 to-transparent"
           />
         </motion.div>
       </section>
@@ -517,7 +517,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
+      {/* ── TESTIMONIALS ───────────────────────────────────────────────────
       <section id="testimonials" className="py-24 bg-white scroll-mt-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <motion.div
@@ -565,10 +565,10 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ── FINAL CTA ─────────────────────────────────────────────────────── */}
-      <section className="py-20 bg-gradient-to-r from-indigo-600 to-violet-600">
+      <section className="py-20 bg-linear-to-r from-indigo-600 to-violet-600">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
