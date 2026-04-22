@@ -11,6 +11,7 @@ import {
   ChevronDown,
   UserPlus,
   BookOpen,
+  Menu,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LogoutModal from "@/components/users/LogoutModal";
@@ -29,7 +30,12 @@ interface NotificationItem {
   link: string;
 }
 
-export default function Topbar({ title = "Dashboard" }: { title?: string }) {
+interface TopbarProps {
+  title?: string;
+  leftContent?: React.ReactNode; // 🟢 Added this to receive the hamburger button
+}
+
+export default function Topbar({ title = "Dashboard", leftContent }: TopbarProps) {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -71,12 +77,11 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
     try {
       const res = await fetch("/api/admin/notifications");
       const data = await res.json();
-      const allItems: NotificationItem[] = data.notifications || data; // Handle both array or wrapped object
+      const allItems: NotificationItem[] = data.notifications || data; 
 
       const lastCleared = localStorage.getItem("notif_clear_timestamp");
       const clearTime = lastCleared ? new Date(lastCleared).getTime() : 0;
 
-      // Only show items that are NEWER than the last time admin cleared them
       const freshItems = Array.isArray(allItems)
         ? allItems.filter((item) => new Date(item.time).getTime() > clearTime)
         : [];
@@ -97,13 +102,13 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
 
   const handleBellClick = () => {
     if (showNotifications) {
-      clearNotificationBadge(); // Clear when the menu is closed
+      clearNotificationBadge();
     }
     setShowNotifications(!showNotifications);
   };
 
   const handleNotificationClick = (link: string) => {
-    clearNotificationBadge(); // Clear when clicking a specific item
+    clearNotificationBadge();
     setShowNotifications(false);
     router.push(link);
   };
@@ -175,9 +180,14 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
   return (
     <>
       <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 lg:px-10 sticky top-0 z-50 shadow-sm">
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
-          {title}
-        </h1>
+        <div className="flex items-center">
+          {/* 🟢 Render Hamburger button here if it exists */}
+          {leftContent}
+          
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+            {title}
+          </h1>
+        </div>
 
         <div className="flex items-center gap-4">
           {/* Notifications Button */}
@@ -249,6 +259,7 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
                 {profile?.image ? (
                   <img
                     src={profile.image}
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -260,7 +271,7 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
                   {profile?.name || "Admin"}
                 </p>
                 <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-tighter">
-                  Super Admin
+                  User Account
                 </p>
               </div>
               <ChevronDown
@@ -306,11 +317,11 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
 
       {/* --- IN-PAGE EDIT MODAL --- */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-xl font-bold text-gray-900">
-                Edit Admin Profile
+                Edit Profile
               </h2>
               <button
                 onClick={() => setIsEditModalOpen(false)}
@@ -326,6 +337,7 @@ export default function Topbar({ title = "Dashboard" }: { title?: string }) {
                     {previewUrl || profile?.image ? (
                       <img
                         src={previewUrl || (profile?.image as string)}
+                        alt="Preview"
                         className="w-full h-full object-cover"
                       />
                     ) : (

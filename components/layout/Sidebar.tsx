@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useLocale } from "next-intl"; // 👈 Added this
-import { useState } from "react";
+import { useLocale } from "next-intl";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -11,67 +11,43 @@ import {
   BrainCircuit,
   LogOut,
   RefreshCw,
-  TrendingUp,
-  FileCheck,
+  X, // Added X icon to close
 } from "lucide-react";
 import LogoutModal from "@/components/users/LogoutModal";
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const locale = useLocale(); // 👈 Get current locale (en or km)
+  const locale = useLocale();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
-  // 📂 1. Fix: Determine the role by stripping the locale from the path
-  // This ensures that "/en/admin" is recognized as Admin
-  const pathWithoutLocale = pathname.replace(`/${locale}`, "") || "/";
+  // Close sidebar automatically when the route changes (on mobile)
+  useEffect(() => {
+    if (onClose) onClose();
+  }, [pathname]);
 
+  const pathWithoutLocale = pathname.replace(`/${locale}`, "") || "/";
   const isAdmin = pathWithoutLocale.startsWith("/admin");
   const isTeacher = pathWithoutLocale.startsWith("/teacher");
   const baseRoute = isAdmin ? "/admin" : isTeacher ? "/teacher" : "/student";
 
-  // 📂 2. Fix: Prefix all HREFs with the current locale
   const menuItems = [
-    {
-      name: "Dashboard",
-      href: `/${locale}${baseRoute}`,
-      icon: LayoutDashboard,
-      hide: isTeacher,
-    },
-    {
-      name: "Users",
-      href: `/${locale}/admin/users`,
-      icon: Users,
-      hide: !isAdmin,
-    },
-    {
-      name: "Class",
-      href: isAdmin ? `/${locale}/admin/classes` : `/${locale}${baseRoute}`,
-      icon: BookOpen,
-    },
-    // --- Added Study Plans for Admin ---
-    {
-      name: "Study Plans",
-      href: `/${locale}/admin/study-plans`,
-      icon: BrainCircuit, // Using the same icon as teacher for consistency
-      hide: !isAdmin,
-    },
-    // -----------------------------------
+    { name: "Dashboard", href: `/${locale}${baseRoute}`, icon: LayoutDashboard, hide: isTeacher },
+    { name: "Users", href: `/${locale}/admin/users`, icon: Users, hide: !isAdmin },
+    { name: "Class", href: isAdmin ? `/${locale}/admin/classes` : `/${locale}${baseRoute}`, icon: BookOpen },
+    { name: "Study Plans", href: `/${locale}/admin/study-plans`, icon: BrainCircuit, hide: !isAdmin },
     ...(isTeacher
       ? [
-          {
-            name: "Student",
-            href: `/${locale}/teacher/students`,
-            icon: Users,
-          },
-          {
-            name: "Study Plans",
-            href: `/${locale}/teacher/plans`,
-            icon: BrainCircuit,
-          },
+          { name: "Student", href: `/${locale}/teacher/students`, icon: Users },
+          { name: "Study Plans", href: `/${locale}/teacher/plans`, icon: BrainCircuit },
         ]
       : []),
   ];
@@ -89,7 +65,6 @@ export default function Sidebar() {
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
         setIsLogoutOpen(false);
-        // Ensure redirect goes to localized login
         router.push(`/${locale}/login`);
         router.refresh();
       }
@@ -103,31 +78,52 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-64 border-r border-gray-200 bg-white flex flex-col h-full sticky top-0 z-10 shadow-sm">
+      {/* 🟢 1. Mobile Overlay: Dims the screen when sidebar is open */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-zinc-900/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      {/* 🟢 2. Sidebar Container: Added responsive transition classes */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 border-r border-gray-200 bg-white flex flex-col h-full shadow-xl transition-transform duration-300 ease-in-out
+        lg:translate-x-0 lg:static lg:shadow-sm
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+      `}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
           <span className="text-xl font-bold bg-linear-to-r from-indigo-600 to-indigo-400 bg-clip-text text-transparent tracking-tight">
             AI Academy
           </span>
 
-          <button
-            onClick={handleUIRefresh}
-            disabled={isRefreshing}
-            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors disabled:opacity-50"
-            title="Reload system data"
-          >
-            <RefreshCw
-              size={16}
-              className={isRefreshing ? "animate-spin text-indigo-600" : ""}
-            />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleUIRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors disabled:opacity-50"
+              title="Reload system data"
+            >
+              <RefreshCw
+                size={16}
+                className={isRefreshing ? "animate-spin text-indigo-600" : ""}
+              />
+            </button>
+            
+            {/* 🟢 3. Close Button: Only visible on mobile */}
+            <button 
+              onClick={onClose}
+              className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 lg:hidden"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1.5">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {menuItems.map((item) => {
             if (item.hide) return null;
-
             const isActive = pathname === item.href;
-
             return (
               <Link
                 key={item.href}
@@ -140,11 +136,7 @@ export default function Sidebar() {
               >
                 <item.icon
                   size={18}
-                  className={`transition-colors ${
-                    isActive
-                      ? "text-indigo-600"
-                      : "text-gray-400 group-hover:text-gray-600"
-                  }`}
+                  className={isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}
                 />
                 {item.name}
               </Link>
@@ -157,10 +149,7 @@ export default function Sidebar() {
             onClick={() => setIsLogoutOpen(true)}
             className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all group"
           >
-            <LogOut
-              size={18}
-              className="text-gray-400 group-hover:text-red-600 transition-colors"
-            />
+            <LogOut size={18} className="text-gray-400 group-hover:text-red-600 transition-colors" />
             <span>Logout</span>
           </button>
         </div>

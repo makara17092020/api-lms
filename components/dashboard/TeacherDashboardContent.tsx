@@ -7,9 +7,14 @@ import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import TeacherStatsCards from "./TeacherStatsCards";
 import TeacherClassesView from "./TeacherClassesView";
+import { Menu } from "lucide-react"; // Make sure to have lucide-react installed
 
 export default function TeacherDashboardContent() {
   const pathname = usePathname();
+  
+  // --- Responsive Menu State ---
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [activeView, setActiveView] = useState<
     "classes" | "students" | "plans"
   >("classes");
@@ -29,6 +34,9 @@ export default function TeacherDashboardContent() {
     } else {
       setActiveView("classes");
     }
+    
+    // Auto-close sidebar when navigating on mobile
+    setIsSidebarOpen(false);
   }, [pathname]);
 
   // Fetch stats
@@ -115,12 +123,28 @@ export default function TeacherDashboardContent() {
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
-      <Sidebar />
+      {/* 🟢 Responsive Sidebar */}
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar title="Teacher Dashboard" />
+        {/* 🟢 Topbar with Hamburger Button */}
+     <Topbar 
+    title="Teacher Dashboard" 
+       leftContent={
+    <button 
+      // 🟢 Change this line to toggle the state (true -> false, false -> true)
+      onClick={() => setIsSidebarOpen((prev) => !prev)} 
+      className="p-2 mr-2 text-gray-600 lg:hidden hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      <Menu size={24} />
+    </button>
+  }
+/>
 
-        <div className="flex-1 overflow-auto p-6 lg:p-8 space-y-8">
+        <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 space-y-8">
           {/* Stats Cards */}
           <TeacherStatsCards
             totalStudents={totalStudents}
@@ -129,9 +153,10 @@ export default function TeacherDashboardContent() {
             activeExams={activeExams}
           />
 
-          {/* Content */}
+          {/* Content Views */}
           <div className="mt-2">
             {activeView === "classes" && <TeacherClassesView />}
+            
             {activeView === "students" && (
               <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-8">
@@ -261,6 +286,7 @@ export default function TeacherDashboardContent() {
                 )}
               </div>
             )}
+
             {activeView === "plans" && (
               <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
                 <div className="flex items-center justify-between mb-8">
