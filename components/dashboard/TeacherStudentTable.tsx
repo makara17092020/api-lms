@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import {
   Pencil,
@@ -18,8 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import CreateStudentModal from "@/components/classes/CreateStudentModal";
-// Assuming you have an Edit modal, otherwise this code provides the state for it
-// import EditStudentModal from "@/components/classes/EditStudentModal";
+import EditStudentModal from "@/components/classes/EditStudentModal";
 
 export default function TeacherStudentTable() {
   const [data, setData] = useState<{
@@ -35,6 +33,7 @@ export default function TeacherStudentTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+
   const [modals, setModals] = useState<{
     add: boolean;
     edit: any | null;
@@ -64,6 +63,7 @@ export default function TeacherStudentTable() {
           }
         });
       });
+
       setData({
         students: Array.from(studentMap.values()),
         classes,
@@ -85,6 +85,7 @@ export default function TeacherStudentTable() {
   );
 
   const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+
   const paginatedData = filteredRows.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
@@ -125,7 +126,6 @@ export default function TeacherStudentTable() {
             Manage your students and their course enrollments.
           </p>
         </div>
-
         <div className="flex items-center gap-3">
           <div className="relative group">
             <Search
@@ -375,13 +375,15 @@ export default function TeacherStudentTable() {
         classId={data.classes[0]?.id}
       />
 
-      {/* If you have an Edit modal, use it here: */}
-      {/* <EditStudentModal
+      {/* EDIT MODAL (Uncommented and fixed) */}
+      {modals.edit && (
+        <EditStudentModal
           isOpen={!!modals.edit}
           student={modals.edit}
           onClose={() => setModals({ ...modals, edit: null })}
           onSuccess={fetchData}
-      /> */}
+        />
+      )}
     </div>
   );
 }
