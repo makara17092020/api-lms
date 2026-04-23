@@ -2,20 +2,40 @@ import { prisma } from "@/lib/prisma";
 
 export class ClassService {
   /**
-   * 1. Create a Class (Teachers & Admins only)
+   * UPDATED: Update student details and handle image file conversion
    */
-  static async createClass(className: string, teacherId: string) {
-    return prisma.class.create({
-      data: { className, teacherId },
-      include: {
-        teacher: { select: { id: true, name: true, email: true } },
+  static async updateStudentProfile(
+    studentId: string,
+    data: { name: string; email: string; image: any },
+  ) {
+    let imageUrl = typeof data.image === "string" ? data.image : undefined;
+
+    // Convert uploaded File to Base64
+    if (data.image && data.image instanceof File) {
+      const bytes = await data.image.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const mimeType = data.image.type;
+      const base64 = buffer.toString("base64");
+      imageUrl = `data:${mimeType};base64,${base64}`;
+    }
+
+    return prisma.user.update({
+      where: { id: studentId },
+      data: {
+        name: data.name,
+        email: data.email,
+        ...(imageUrl && { image: imageUrl }),
       },
     });
   }
 
-  /**
-   * 2. Find Class by ID
-   */
+  static async createClass(className: string, teacherId: string) {
+    return prisma.class.create({
+      data: { className, teacherId },
+      include: { teacher: { select: { id: true, name: true, email: true } } },
+    });
+  }
+
   static async findClassById(classId: string) {
     return prisma.class.findUnique({
       where: { id: classId },
@@ -23,9 +43,6 @@ export class ClassService {
     });
   }
 
-  /**
-   * 3. Update Class (Supports changing Instructor)
-   */
   static async updateClass(
     classId: string,
     className: string,
@@ -33,33 +50,20 @@ export class ClassService {
   ) {
     return prisma.class.update({
       where: { id: classId },
-      data: {
-        className,
-        teacherId,
-      },
-      include: {
-        teacher: { select: { id: true, name: true, email: true } },
-      },
+      data: { className, teacherId },
+      include: { teacher: { select: { id: true, name: true, email: true } } },
     });
   }
 
-  /**
-   * 4. Delete Class
-   */
   static async deleteClass(classId: string) {
-    return prisma.class.delete({
-      where: { id: classId },
-    });
+    return prisma.class.delete({ where: { id: classId } });
   }
 
-  /**
-   * 5. Get classes taught by a teacher (UPDATED to pull live student study plans!)
-   */
   static async getClassesByTeacher(teacherId: string) {
     return prisma.class.findMany({
       where: { teacherId },
       include: {
-        _count: { select: { enrollments: true, questions: true } }, // Pull metrics
+        _count: { select: { enrollments: true, questions: true } },
         enrollments: {
           include: {
             student: {
@@ -69,11 +73,7 @@ export class ClassService {
                 email: true,
                 image: true,
                 studyPlans: {
-                  include: {
-                    tasks: {
-                      orderBy: { dayNumber: "asc" },
-                    },
-                  },
+                  include: { tasks: { orderBy: { dayNumber: "asc" } } },
                   orderBy: { createdAt: "desc" },
                 },
               },
@@ -85,58 +85,33 @@ export class ClassService {
     });
   }
 
-  /**
-   * 6. Get classes a student is enrolled in
-   */
   static async getClassesByStudent(studentId: string) {
     const enrollments = await prisma.enrollment.findMany({
       where: { studentId },
       include: {
-        class: {
-          include: {
-            teacher: { select: { id: true, name: true } },
-          },
-        },
+        class: { include: { teacher: { select: { id: true, name: true } } } },
       },
       orderBy: { createdAt: "desc" },
     });
-
-    // Isolate the class object and return it
     return enrollments.map((e) => e.class);
   }
 
-  /**
-   * 7. Add Student to Class (Enrollment)
-   */
   static async enrollStudent(classId: string, studentId: string) {
-    // Verify target user is a student
     const student = await prisma.user.findUnique({ where: { id: studentId } });
-    if (!student || student.role !== "STUDENT") {
-      throw new Error("Target user is not a valid student profile.");
-    }
-
+    if (!student || student.role !== "STUDENT")
+      throw new Error("Invalid student.");
     return prisma.enrollment.create({
       data: { classId, studentId },
-      include: {
-        student: { select: { id: true, name: true, email: true } },
-      },
+      include: { student: { select: { id: true, name: true, email: true } } },
     });
   }
 
-  /**
-   * 8. Remove Student from Class
-   */
   static async unenrollStudent(classId: string, studentId: string) {
     return prisma.enrollment.delete({
-      where: {
-        classId_studentId: { classId, studentId }, // Matches the @@unique in schema
-      },
+      where: { classId_studentId: { classId, studentId } },
     });
   }
 
-  /**
-   * 9. Get all students enrolled in a class
-   */
   static async getEnrolledStudents(classId: string) {
     const enrollments = await prisma.enrollment.findMany({
       where: { classId },
@@ -144,14 +119,9 @@ export class ClassService {
         student: { select: { id: true, name: true, email: true, image: true } },
       },
     });
-
     return enrollments.map((e) => e.student);
   }
 
-  /**
-   * 10. Get ALL classes (Super Admin view)
-   * FIXED: Now includes enrollments so your ClassCard dropdown sees student data!
-   */
   static async getAllClasses() {
     return prisma.class.findMany({
       include: {
