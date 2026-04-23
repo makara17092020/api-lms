@@ -1,7 +1,20 @@
 "use client";
 
 import React from 'react';
-import { Github, Linkedin, Mail, Send, Rocket, Cpu, Database, Layout, Server, Target } from 'lucide-react';
+import Link from 'next/link'; // Added for navigation
+import { 
+  Github, 
+  Linkedin, 
+  Mail, 
+  Send, 
+  Rocket, 
+  Cpu, 
+  Database, 
+  Layout, 
+  Server, 
+  Target,
+  ArrowLeft // Added for the back button
+} from 'lucide-react';
 
 const teamMembers = [
   {
@@ -30,7 +43,19 @@ const teamMembers = [
 
 export default function AboutUs() {
   return (
-    <div className="bg-[#0A0F1D] min-h-screen text-slate-300">
+    <div className="bg-[#0A0F1D] min-h-screen text-slate-300 relative">
+      
+      {/* --- Back to Home Button --- */}
+      <div className="absolute top-8 left-4 md:left-10 z-50">
+        <Link 
+          href="/" 
+          className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/50 border border-slate-800 backdrop-blur-md hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300"
+        >
+          <ArrowLeft size={18} className="text-slate-400 group-hover:text-indigo-400 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Back to Home</span>
+        </Link>
+      </div>
+
       {/* --- Dark Hero Section --- */}
       <section className="relative py-28 px-4 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
