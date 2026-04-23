@@ -202,7 +202,7 @@ function ClassCard({ cls, onAction, refresh }: any) {
             />
             <ActionButton
               icon={Eye}
-              label="View Bank"
+              label="View Answers"
               color="bg-gray-900 text-white shadow-lg shadow-gray-200"
               onClick={() => onAction("view")}
             />
