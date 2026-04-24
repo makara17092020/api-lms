@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { verifyAccessToken, type JwtPayload } from "./jwt";
 
-
 export interface Session {
   user: JwtPayload | null;
 }
@@ -32,7 +31,7 @@ export const setAuthCookies = (
   res.cookies.set(
     REFRESH_COOKIE_NAME,
     refreshToken,
-    cookieOptions(7 * 24 * 60 * 60),
+    cookieOptions(1 * 24 * 60 * 60),
   );
 };
 
