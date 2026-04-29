@@ -220,7 +220,7 @@ export default function LoginPage() {
               </motion.div>
             </form>
 
-            {/* Google Section */}
+            {/* Google Section
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -247,7 +247,7 @@ export default function LoginPage() {
               >
                 <FcGoogle size={24} />
               </motion.button>
-            </motion.div>
+            </motion.div> */}
 
             <div className="mt-10 text-center text-sm text-gray-500">
               {t("newToPlatform")}{" "}
