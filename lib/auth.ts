@@ -27,7 +27,11 @@ export const setAuthCookies = (
   accessToken: string,
   refreshToken: string,
 ) => {
-  res.cookies.set(ACCESS_COOKIE_NAME, accessToken, cookieOptions(15 * 60));
+  res.cookies.set(
+    ACCESS_COOKIE_NAME,
+    accessToken,
+    cookieOptions(1 * 24 * 60 * 60),
+  );
   res.cookies.set(
     REFRESH_COOKIE_NAME,
     refreshToken,

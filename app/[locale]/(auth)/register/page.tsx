@@ -246,7 +246,7 @@ export default function RegisterPage() {
               </motion.div>
             </form>
 
-            {/* Google */}
+            {/* Google
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -273,7 +273,7 @@ export default function RegisterPage() {
               >
                 <FcGoogle size={24} />
               </motion.button>
-            </motion.div>
+            </motion.div> */}
 
             <div className="mt-10 text-center text-sm text-gray-500">
               {t("alreadyHaveAccount")}{" "}
